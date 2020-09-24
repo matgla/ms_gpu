@@ -1,0 +1,13 @@
+{
+    "dependencies": [
+        {
+            "link": "https://github.com/matgla/EmbeddedHAL.git",
+            "type": "git",
+            "version": "master",
+            "directory": "hal",
+            "target": "hal",
+            "options": {
+            }
+        }
+    ]
+}
