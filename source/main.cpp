@@ -14,347 +14,21 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#include <cmath>
-#include <cstdlib>
+#include <chrono>
+
+#include <stm32f4xx.h>
+#include <stm32f4xx_hal.h>
 
 #include <board.hpp>
 
+#include <hal/time/time.hpp>
 #include <hal/time/sleep.hpp>
-#include <stm32f4xx.h>
-#include <stm32f4xx_hal.h>
-#include <stm32f4xx_hal_rcc.h>
-#include <stm32f4xx_hal_dma.h>
-#include <stm32f4xx_hal_tim.h>
-#include <stm32f4xx_hal_cortex.h>
-
 #include <hal/interrupt/systick.hpp>
 
 #include <eul/utils/string.hpp>
 
-#include <hal/time/time.hpp>
-#include <hal/time/sleep.hpp>
-
-TIM_HandleTypeDef tim2;
-TIM_HandleTypeDef tim3;
-
-extern "C"
-{
-    auto& usart = hal::interfaces::USART_1();
-
-
-    auto& hsync = hal::gpio::PB4(); // TIM3-CH1
-    auto& vsync = hal::gpio::PB6(); // TIM4-CH1
-
-    int counter = 0;
-    void TIM3_IRQHandler()
-    {
-       if(TIM3->SR & TIM_SR_UIF) // if UIF flag is set
-        {
-            hsync.set_low();
-            if (++counter == 640)
-            {
-                counter = 0;
-                vsync.set_low();
-                hal::time::sleep(std::chrono::microseconds(60));
-                vsync.set_high();
-
-            }
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            asm("nop");
-            hsync.set_high();
-            TIM3->SR &= ~TIM_SR_UIF; // clear UIF flag
-        }
-    }
-}
-
-uint32_t line[320];
-
-void draw_line()
-{
-    for (int i = 0; i < 9000000; ++i)
-    {
-        GPIOC->ODR = line[i % 320];
-    }
-}
-
-enum class Polarity
-{
-    Positive,
-    Negative
-};
-
-struct Timings
-{
-    float pixel_frequency;
-    struct Line
-    {
-        const uint32_t visible_pixels;
-        const uint32_t front_porch_pixels;
-        const uint32_t sync_pulse_pixels;
-        const uint32_t back_porch_pixels;
-    };
-
-    struct Frame
-    {
-        const uint32_t visible_lines;
-        const uint32_t front_porch_lines;
-        const uint32_t sync_pulse_lines;
-        const uint32_t back_porch_lines;
-    };
-
-    const Line line;
-    const Frame frame;
-    const Polarity hsync_polarity;
-    const Polarity vsync_polarity;
-};
-
-
-constexpr Timings svga_800x600_60 = {
-    .pixel_frequency = 40.0,
-    .line = {
-        .visible_pixels = 800,
-        .front_porch_pixels = 40,
-        .sync_pulse_pixels = 128,
-        .back_porch_pixels = 88
-    },
-    .frame = {
-        .visible_lines = 600,
-        .front_porch_lines = 1,
-        .sync_pulse_lines = 4,
-        .back_porch_lines = 23
-    },
-    .hsync_polarity = Polarity::Positive,
-    .vsync_polarity = Polarity::Negative
-};
-
-void initalize_hsync(const Timings& timings)
-{
-    float clock_to_pixel = HAL_RCC_GetHCLKFreq() / 1000000 / timings.pixel_frequency;
-}
+#include "vga.hpp"
+#include "timings.hpp"
 
 int main()
 {
@@ -366,17 +40,21 @@ int main()
 
     hal::time::Time::init();
     hal::interrupt::disable_systick();
+    char data[99];
 
-    hal::gpio::PC13().init(hal::gpio::Output::PushPull, hal::gpio::Speed::Fast, hal::gpio::PullUpPullDown::Down);
-    hsync.init(hal::gpio::Output::PushPull, hal::gpio::Speed::High, hal::gpio::PullUpPullDown::None);
-    vsync.init(hal::gpio::Output::PushPull, hal::gpio::Speed::High, hal::gpio::PullUpPullDown::None);
-    auto& pin = hal::gpio::PC13();
-
-    hsync.set_high();
-
-    initialize_hsync();
-
+    eul::utils::itoa(HAL_RCC_GetHCLKFreq(), data);
+    hal::interfaces::USART_1().write(data);
+    hal::interfaces::USART_1().write("\n");
+    Vga vga;
+    vga.initialize_hsync(svga_800x600_60);
+    vga.initialize_vsync(svga_800x600_60);
+    auto& pa2 = hal::gpio::PA2();
+    pa2.init(hal::gpio::Output::PushPull, hal::gpio::Speed::High, hal::gpio::PullUpPullDown::Up);
+    auto& pa4 = hal::gpio::PA4();
+    pa4.init(hal::gpio::Output::PushPull, hal::gpio::Speed::High, hal::gpio::PullUpPullDown::Up);
     while (true)
     {
+        GPIOA->ODR = 0x4;
+        GPIOA->ODR = 0x0;
     }
 }

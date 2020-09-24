@@ -14,49 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#include <sys/types.h>
+#pragma once 
 
-#include <board.hpp>
+#include "timings.hpp"
 
-extern "C"
+class Vga
 {
-
-extern char __heap_start;
-extern char __heap_end;
-
-static char* current_heap_end = &__heap_start;
-
-caddr_t _sbrk(int incr)
-{
-    if (current_heap_end + incr > (&__heap_end))
-    {
-        // printf("Heap overflow!\n");
-        return NULL;
-    }
-
-    char* previous_heap_end = current_heap_end;
-    current_heap_end += incr;
-    return static_cast<caddr_t>(previous_heap_end);
-}
-
-void _exit(int)
-{
-}
-
-void _kill(pid_t)
-{
-}
-
-int write(int fd, const char* str, int n)
-{
-    hal::interfaces::USART_1().write(std::string_view(str, n));
-    return n;
-}
-
-pid_t _getpid()
-{
-    return 0;
-}
-
-
-}
+public: 
+    void initialize_hsync(const Timings& timings);
+    void initialize_vsync(const Timings& timings);
+};
