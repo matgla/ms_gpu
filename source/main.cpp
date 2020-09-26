@@ -16,10 +16,9 @@
 
 #include <chrono>
 
-#include <stm32f4xx.h>
-#include <stm32f4xx_hal.h>
-
 #include <board.hpp>
+
+#include <stm32f4xx_hal.h>
 
 #include <hal/time/time.hpp>
 #include <hal/time/sleep.hpp>
@@ -62,7 +61,7 @@ int main()
     pa3.init(hal::gpio::Output::PushPull, hal::gpio::Speed::High, hal::gpio::PullUpPullDown::Up);
     pa4.init(hal::gpio::Output::PushPull, hal::gpio::Speed::High, hal::gpio::PullUpPullDown::Up);
     pa5.init(hal::gpio::Output::PushPull, hal::gpio::Speed::High, hal::gpio::PullUpPullDown::Up);
-    
+
     while (true)
     {
         usart.write("This is not a blocker\n");

@@ -18,14 +18,14 @@
 
 #include <cstring>
 
-#include <stm32f4xx.h> 
-#include <stm32f4xx_hal.h> 
-#include <stm32f4xx_hal_rcc.h> 
-#include <stm32f4xx_hal_dma.h>  // tim.h has dependency to dma
-#include <stm32f4xx_hal_tim.h> 
-#include <arm/stm32/stm32f4xx/gpio/stm32f4xx_gpio.hpp>
-
 #include <board.hpp>
+
+#include <stm32f4xx.h>
+#include <stm32f4xx_hal.h>
+#include <stm32f4xx_hal_rcc.h>
+#include <stm32f4xx_hal_dma.h>  // tim.h has dependency to dma
+#include <stm32f4xx_hal_tim.h>
+#include <arm/stm32/stm32f4xx/gpio/stm32f4xx_gpio.hpp>
 
 #include "image.hpp"
 
@@ -46,7 +46,7 @@ extern "C"
 {
     void TIM2_IRQHandler()
     {
-        if (__HAL_TIM_GET_FLAG(&tim2, TIM_FLAG_CC2) != RESET 
+        if (__HAL_TIM_GET_FLAG(&tim2, TIM_FLAG_CC2) != RESET
             && __HAL_TIM_GET_IT_SOURCE(&tim2, TIM_FLAG_CC2) != RESET)
         {
             __HAL_TIM_CLEAR_IT(&tim2, TIM_FLAG_CC2);
@@ -79,7 +79,7 @@ extern "C"
     int image_line = 0;
     int empty_lines = 60;
 
-    inline void draw() 
+    inline void draw()
     {
         if (empty_lines != 0) return;
         if (image_line == 240) return;
@@ -87,11 +87,11 @@ extern "C"
     }
 
     bool is_vsync = false;
-    // after back porch 
+    // after back porch
     void TIM3_IRQHandler()
     {
 
-        if (__HAL_TIM_GET_FLAG(&tim3, TIM_FLAG_CC2) != RESET 
+        if (__HAL_TIM_GET_FLAG(&tim3, TIM_FLAG_CC2) != RESET
             && __HAL_TIM_GET_IT_SOURCE(&tim3, TIM_FLAG_CC2) != RESET)
         {
             if (!is_vsync)
@@ -101,7 +101,7 @@ extern "C"
                 {
                     --empty_lines;
                 }
-                else 
+                else
                 {
                     if (line_counter % 2)
                     {
@@ -127,7 +127,7 @@ extern "C"
     void TIM4_IRQHandler()
     {
 
-        if (__HAL_TIM_GET_FLAG(&tim4, TIM_FLAG_CC4) != RESET 
+        if (__HAL_TIM_GET_FLAG(&tim4, TIM_FLAG_CC4) != RESET
             && __HAL_TIM_GET_IT_SOURCE(&tim4, TIM_FLAG_CC4) != RESET)
         {
 
@@ -154,13 +154,13 @@ void Vga::initialize_hsync(const Timings& timings)
 {
     const float clocks_in_pixel = HAL_RCC_GetHCLKFreq() / 1000000 / timings.pixel_frequency;
     hsync.init(hal::gpio::Alternate::PushPull, hal::gpio::Speed::High, hal::gpio::PullUpPullDown::Up);
-    
+
     static_cast<hal::gpio::DigitalInputOutputPin::Impl*>(&hsync)
         ->set_alternate_function(GPIO_AF2_TIM3);
 
 
-    const int ticks_for_line = clocks_in_pixel * 
-        (timings.line.visible_pixels + timings.line.back_porch_pixels 
+    const int ticks_for_line = clocks_in_pixel *
+        (timings.line.visible_pixels + timings.line.back_porch_pixels
         + timings.line.sync_pulse_pixels + timings.line.front_porch_pixels)
         - 1;
 
@@ -188,7 +188,7 @@ void Vga::initialize_hsync(const Timings& timings)
     HAL_NVIC_EnableIRQ(TIM2_IRQn);
 
     oc.OCMode = TIM_OCMODE_INACTIVE;
-    oc.Pulse = 100; // test value 
+    oc.Pulse = 100; // test value
     HAL_TIM_OC_ConfigChannel(&tim2, &oc, TIM_CHANNEL_2);
     __HAL_TIM_ENABLE_IT(&tim2, TIM_IT_CC2);
 
@@ -241,14 +241,14 @@ void Vga::initialize_hsync(const Timings& timings)
 
 void Vga::initialize_vsync(const Timings& timings)
 {
-    // Timer 4 for vsync counts Timer 3 pulses 
+    // Timer 4 for vsync counts Timer 3 pulses
     const int frame = timings.frame.back_porch_lines
-        + timings.frame.front_porch_lines 
-        + timings.frame.sync_pulse_lines 
-        + timings.frame.visible_lines; 
+        + timings.frame.front_porch_lines
+        + timings.frame.sync_pulse_lines
+        + timings.frame.visible_lines;
 
     vsync.init(hal::gpio::Alternate::PushPull, hal::gpio::Speed::High, hal::gpio::PullUpPullDown::Up);
-    
+
     static_cast<hal::gpio::DigitalInputOutputPin::Impl*>(&vsync)
         ->set_alternate_function(GPIO_AF2_TIM4);
 

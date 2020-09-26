@@ -16,11 +16,11 @@
 
 #pragma once
 
-#include <hal/interfaces/usart.hpp>
-
 #include <stm32f401ceu6_usart.hpp>
 #include <stm32f401ceu6_i2c.hpp>
 #include <stm32f401ceu6_gpio.hpp>
+
+#include <hal/interfaces/usart.hpp>
 
 namespace board
 {
