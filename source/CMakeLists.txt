@@ -25,10 +25,19 @@ target_sources(msgpu
         ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/syscalls.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/vga.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/draw_800.s
+        ${CMAKE_CURRENT_SOURCE_DIR}/draw_256.s
 )
 
 target_link_libraries(msgpu PRIVATE hal)
 
+
+
+target_compile_options(msgpu PUBLIC
+    $<$<COMPILE_LANGUAGE:CXX>:-std=c++2a;-Wno-volatile>
+    $<$<CONFIG:DEBUG>:-Og -g>
+    $<$<CONFIG:RELEASE>:-Os>
+)
 
 if (${vendor} STREQUAL "STM32")
     set_target_properties(msgpu

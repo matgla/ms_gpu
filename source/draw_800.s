@@ -14,14 +14,35 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#pragma once 
 
-#include "timings.hpp"
+.syntax unified
+.arch armv7-m
+.thumb
 
-class Vga
-{
-public: 
-    void initialize_hsync(const Timings& timings);
-    void initialize_vsync(const Timings& timings);
-    void setup_draw_function();
-};
+.global draw_800
+draw_800:
+    // prepare 
+    push {r2}
+    
+    @ .rept 100
+        @ .set pixel_index, 0
+        .rept 400
+        // first pixel
+
+        ldrbt r2, [r0, #1] // load first 4 pixels // 2C
+        strb r2, [r1]                // store to odr // 2C
+        add r0, #1
+        // but with ART this is eual to 4 clock ticks
+        @ nop                          // align to offset count // 1C
+        @ .set pixel_index, pixel_index + 1
+        .endr
+        @ add r0, #4                   // move to next array element 1C  
+    @ .endr
+    // clear at the end
+    mov r2, #0 // 1C
+    nop
+    strb r2, [r1] // 2C
+
+    pop {r2}
+    bx lr 
+

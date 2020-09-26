@@ -34,7 +34,8 @@ int main()
 {
     board::board_init();
     hal::interfaces::USART_1().init(9600);
-
+    auto& usart = hal::interfaces::USART_1();
+    hal::interfaces::USART_1().write("---gpu---\n");
     hal::interrupt::set_systick_handler([](std::chrono::milliseconds){
     });
 
@@ -46,15 +47,24 @@ int main()
     hal::interfaces::USART_1().write(data);
     hal::interfaces::USART_1().write("\n");
     Vga vga;
+    vga.setup_draw_function();
     vga.initialize_hsync(svga_800x600_60);
     vga.initialize_vsync(svga_800x600_60);
+    auto& pa0 = hal::gpio::PA0();
+    auto& pa1 = hal::gpio::PA1();
     auto& pa2 = hal::gpio::PA2();
-    pa2.init(hal::gpio::Output::PushPull, hal::gpio::Speed::High, hal::gpio::PullUpPullDown::Up);
+    auto& pa3 = hal::gpio::PA3();
     auto& pa4 = hal::gpio::PA4();
+    auto& pa5 = hal::gpio::PA5();
+    pa0.init(hal::gpio::Output::PushPull, hal::gpio::Speed::High, hal::gpio::PullUpPullDown::Up);
+    pa1.init(hal::gpio::Output::PushPull, hal::gpio::Speed::High, hal::gpio::PullUpPullDown::Up);
+    pa2.init(hal::gpio::Output::PushPull, hal::gpio::Speed::High, hal::gpio::PullUpPullDown::Up);
+    pa3.init(hal::gpio::Output::PushPull, hal::gpio::Speed::High, hal::gpio::PullUpPullDown::Up);
     pa4.init(hal::gpio::Output::PushPull, hal::gpio::Speed::High, hal::gpio::PullUpPullDown::Up);
+    pa5.init(hal::gpio::Output::PushPull, hal::gpio::Speed::High, hal::gpio::PullUpPullDown::Up);
+    
     while (true)
     {
-        GPIOA->ODR = 0x4;
-        GPIOA->ODR = 0x0;
+        usart.write("This is not a blocker\n");
     }
 }
