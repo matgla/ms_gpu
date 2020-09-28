@@ -19,30 +19,33 @@
 .arch armv7-m
 .thumb
 
-.global draw_800
-draw_800:
-    // prepare 
+// Draw optimized version of 400 pixel width
+.global draw_400_o
+draw_400_o:
+    // prepare
     push {r2}
-    
-    @ .rept 100
-        @ .set pixel_index, 0
-        .rept 400
-        // first pixel
 
-        ldrbt r2, [r0, #1] // load first 4 pixels // 2C
-        strb r2, [r1]                // store to odr // 2C
-        add r0, #1
-        // but with ART this is eual to 4 clock ticks
-        @ nop                          // align to offset count // 1C
-        @ .set pixel_index, pixel_index + 1
+    .rept 80
+        ldr r2, [r0] // load first 32 pixels 2C
+        strb r2, [r1]  // store to odr // 2C
+
+        .rept 3 // 3 next pixels in uint32_t
+            ror r2, r2, #0x6 // 1C
+            nop              // 1C
+            strb r2, [r1]    // 2C
         .endr
-        @ add r0, #4                   // move to next array element 1C  
-    @ .endr
-    // clear at the end
-    mov r2, #0 // 1C
+
+        // last pixel differs since data pointer must be incremented
+        ror r2, r2, #0x6 // 1C
+        add r0, #4       // 1C
+        strb r2, [r1]    // 2C
+    .endr
+
+    mov r2, #0x00 // 1C
+    nop
     nop
     strb r2, [r1] // 2C
 
     pop {r2}
-    bx lr 
+    bx lr
 

@@ -8,6 +8,15 @@
             "target": "hal",
             "options": {
             }
+        },
+        {
+            "link": "https://github.com/matgla/MsGui.git",
+            "type": "git",
+            "version": "master",
+            "directory": "msgui",
+            "target": "msgui",
+            "options": {
+            }
         }
     ]
 }

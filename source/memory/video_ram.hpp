@@ -14,32 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#pragma once
 
-.syntax unified
-.arch armv7-m
-.thumb
+#include <cstdint>
 
-.global draw_256
-draw_256:
-    // prepare 
-    push {r2}
-
-    .rept 24
-    nop
-    .endr 
-    .rept 255
-        ldrbt r2, [r0, #1] // load first 4 pixels // 2C
-        strb r2, [r1]                // store to odr // 2C
-        add r0, #1
-        nop
-        nop
-        nop
-    .endr
-
-    mov r2, #0x00 // 1C
-    nop
-    strb r2, [r1] // 2C
-
-    pop {r2}
-    bx lr 
-
+namespace vga
+{
+    extern uint32_t* video_ram;
+} // namespace vga

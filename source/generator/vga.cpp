@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "vga.hpp"
+#include "generator/vga.hpp"
 
 #include <cstring>
 
@@ -27,13 +27,11 @@
 #include <stm32f4xx_hal_tim.h>
 #include <arm/stm32/stm32f4xx/gpio/stm32f4xx_gpio.hpp>
 
-#include "image.hpp"
-
 namespace
 {
 
 auto& hsync = hal::gpio::PB4(); // TIM3-CH1
-auto& vsync = hal::gpio::PB6(); // TIM4-CH1
+auto& vsync = hal::gpio::PB8(); // TIM4-CH1
 auto& usart = hal::interfaces::USART_1();
 
 TIM_HandleTypeDef tim2;
@@ -60,21 +58,21 @@ extern "C"
 
     // const uint8_t data[] = {0xC, 0xC, 0xC0, 0xC, 0xC, 0xC0, 0xC, 0xC, 0xC0, 0xC, 0xC, 0xC0, 0xC, 0xC, 0xC0, 0xC, 0xC, 0xC0, 0xC, 0xC, 0xC0, 0xC, 0xC, 0xC0, 0xC, 0xC, 0xC0, 0xC, 0xC, 0xC0, 0xC, 0xC, 0xC0, 0xC, 0xC, 0xC0, 0xC, 0xC, 0xC0};
     // uint32_t data_2[100] = {};
+    uint32_t data[100*200];
 
-    void draw_800(const uint32_t* data, volatile uint32_t* odr);
     void draw_256(const uint32_t* data, volatile uint32_t* odr);
 
-    void draw_800_wrapper(const uint32_t* data, volatile uint32_t* odr)
-    {
-        draw_800(data, odr);
-    }
+    // void draw_800_wrapper(const uint32_t* data, volatile uint32_t* odr)
+    // {
+    //     draw_800(data, odr);
+    // }
 
     void draw_256_wrapper(const uint32_t* data, volatile uint32_t* odr)
     {
         draw_256(data, odr);
     }
 
-    static void(*draw_func)(const uint32_t*, volatile uint32_t*) = &draw_800_wrapper;
+    static void(*draw_func)(const uint32_t*, volatile uint32_t*) = &draw_256_wrapper;
     int line_counter = 0;
     int image_line = 0;
     int empty_lines = 60;
@@ -145,9 +143,33 @@ extern "C"
 
 }
 
-void Vga::setup_draw_function()
+namespace vga
 {
-    draw_func = &draw_256_wrapper;
+    std::string_view to_string(Mode mode)
+    {
+        switch (mode)
+        {
+            case Mode::Text_80x25: return "Text_80x25";
+            case Mode::Graphic_256x240: return "Graphic_256x240";
+        }
+        return "Unknown";
+    }
+}
+
+void Vga::setup_draw_function(const vga::Mode mode)
+{
+    using Mode = vga::Mode;
+    switch (mode)
+    {
+        case Mode::Text_80x25:
+        {
+            // draw_func = &draw_800_wrapper;
+        } break;
+        case Mode::Graphic_256x240:
+        {
+            draw_func = &draw_256_wrapper;
+        } break;
+    }
 }
 
 void Vga::initialize_hsync(const Timings& timings)
@@ -278,13 +300,37 @@ void Vga::initialize_vsync(const Timings& timings)
     oc.OCIdleState = TIM_OCIDLESTATE_RESET;
     oc.OCPolarity = TIM_OCPOLARITY_LOW;
     oc.OCFastMode = TIM_OCFAST_DISABLE;
-    HAL_TIM_PWM_ConfigChannel(&tim4, &oc, TIM_CHANNEL_1);
+    HAL_TIM_PWM_ConfigChannel(&tim4, &oc, TIM_CHANNEL_3);
 
     oc.OCMode = TIM_OCMODE_INACTIVE;
     oc.Pulse = timings.frame.sync_pulse_lines + timings.frame.back_porch_lines - 2;
     HAL_TIM_OC_ConfigChannel(&tim4, &oc, TIM_CHANNEL_4);
     __HAL_TIM_ENABLE_IT(&tim4, TIM_IT_CC4);
 
-    TIM_CCxChannelCmd(tim4.Instance, TIM_CHANNEL_1, TIM_CCx_ENABLE);
+    TIM_CCxChannelCmd(tim4.Instance, TIM_CHANNEL_3, TIM_CCx_ENABLE);
     __HAL_TIM_ENABLE(&tim4);
 }
+
+// void Vga::write(int y, int x, char c)
+// {
+//     for (int yy = 0; yy < 8; ++yy)
+//     {
+//         for (int xx = 0; xx < 5; ++xx)
+//         {
+
+//         }
+//     }
+// }
+
+// void Vga::set_pixel(int y, int x, int color)
+// {
+//     const int position = y*64 + x / 4;
+//     const int offset =  8 * (x % 4);
+//     data[position] &= ~(0xff << offset);
+//     data[position] |= color << offset;
+// }
+
+// void Vga::clear(int color)
+// {
+//     std::memset(data, color, sizeof(data));
+// }

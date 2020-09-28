@@ -14,46 +14,24 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-add_executable(msgpu)
+add_library(msgpu_modes)
 
-find_package(msgui REQUIRED)
+target_sources(msgpu_modes
+    PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/modes.hpp
 
-add_subdirectory(generator)
-add_subdirectory(interfaces)
-add_subdirectory(memory)
-add_subdirectory(modes)
-add_subdirectory(processor)
-
-target_sources(msgpu
     PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/syscalls.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/draw/draw_256.s
+        ${CMAKE_CURRENT_SOURCE_DIR}/draw/draw_400_o.s
+
 )
 
-target_link_libraries(msgpu PRIVATE
-    hal
-    msgui
-    vga_generator
-    msgpu_interfaces
-    msgpu_video_ram
-    msgpu_modes
-    msgpu_processor
-)
+target_link_libraries(msgpu_modes PRIVATE hal)
 
-target_compile_options(msgpu PUBLIC
-    $<$<COMPILE_LANGUAGE:CXX>:-std=c++2a;-Wno-volatile>
+target_compile_options(msgpu_modes PUBLIC
+    $<$<COMPILE_LANGUAGE:CXX>:-std=c++2a>
     $<$<CONFIG:DEBUG>:-Og -g>
     $<$<CONFIG:RELEASE>:-Os>
 )
 
-target_include_directories(msgpu PUBLIC ${PROJECT_SOURCE_DIR})
-
-if (${vendor} STREQUAL "STM32")
-    set_target_properties(msgpu
-        PROPERTIES
-            SUFFIX ".elf"
-    )
-endif ()
-
-include (GenerateBinary)
-generate_binary(msgpu ${vendor})
+target_include_directories(msgpu_modes PUBLIC ${PROJECT_SOURCE_DIR})
