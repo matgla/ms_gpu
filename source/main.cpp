@@ -41,6 +41,7 @@ void nanosleep(timespec* ts, timespec *tc)
 #include "generator/vga.hpp"
 #include "generator/timings.hpp"
 #include "interfaces/usart.hpp"
+#include "modes/modes.hpp"
 
 #include "processor/command_processor.hpp"
 
@@ -95,7 +96,7 @@ int main()
     Usart usart;
     usart.initialize();
 
-    Vga vga;
+    vga::Vga vga;
     vga.initialize_hsync(svga_800x600_60);
     vga.initialize_vsync(svga_800x600_60);
 
@@ -107,7 +108,7 @@ int main()
 
     int escape_counter = 0;
     bool human_interface = false;
-
+    vga::Mode mode(vga);
     processor::CommandProcessor processor;
     while (true)
     {

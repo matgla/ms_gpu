@@ -18,6 +18,7 @@
 
 #include <cstdint>
 #include <string_view>
+#include <tuple>
 
 namespace processor
 {
@@ -31,7 +32,9 @@ public:
 
 private:
     void process_command();
-    std::string_view get_part() const;
+    std::string_view get_next_part();
+
+    void help() const;
 
     char buffer_[100];
     std::string_view to_parse_;

@@ -14,39 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#pragma once
+#include "modes/draw/draw_400_o.hpp"
 
-#include <variant>
-
-#include "generator/vga.hpp"
-#include "modes/text/66x25.hpp"
-
-namespace vga
+void draw_400_6bit_wrapper(const uint32_t* data, volatile uint32_t* odr)
 {
-
-enum class Modes
-{
-    Text_66x25 = 0,
-    Graphic_256x240 = 1
-};
-
-std::string_view to_string(Modes mode);
-
-class None
-{
-};
-
-class Mode
-{
-public:
-    Mode(vga::Vga& vga);
-
-    void switch_to(const Modes mode);
-private:
-    std::variant<
-        None
-        , vga::modes::text::Mode66x25
-        > mode_;
-};
-
-} // namespace vga
+    draw_400_o(data, odr);
+}

@@ -27,6 +27,8 @@
 #include <stm32f4xx_hal_tim.h>
 #include <arm/stm32/stm32f4xx/gpio/stm32f4xx_gpio.hpp>
 
+#include "memory/video_ram.hpp"
+
 namespace
 {
 
@@ -58,7 +60,6 @@ extern "C"
 
     // const uint8_t data[] = {0xC, 0xC, 0xC0, 0xC, 0xC, 0xC0, 0xC, 0xC, 0xC0, 0xC, 0xC, 0xC0, 0xC, 0xC, 0xC0, 0xC, 0xC, 0xC0, 0xC, 0xC, 0xC0, 0xC, 0xC, 0xC0, 0xC, 0xC, 0xC0, 0xC, 0xC, 0xC0, 0xC, 0xC, 0xC0, 0xC, 0xC, 0xC0, 0xC, 0xC, 0xC0};
     // uint32_t data_2[100] = {};
-    uint32_t data[100*200];
 
     void draw_256(const uint32_t* data, volatile uint32_t* odr);
 
@@ -81,7 +82,7 @@ extern "C"
     {
         if (empty_lines != 0) return;
         if (image_line == 240) return;
-        draw_func(&data[image_line * 64], static_cast<volatile uint32_t*>(&GPIOA->ODR));
+        draw_func(&vga::video_ram[image_line * 64], static_cast<volatile uint32_t*>(&GPIOA->ODR));
     }
 
     bool is_vsync = false;
@@ -145,31 +146,10 @@ extern "C"
 
 namespace vga
 {
-    std::string_view to_string(Mode mode)
-    {
-        switch (mode)
-        {
-            case Mode::Text_80x25: return "Text_80x25";
-            case Mode::Graphic_256x240: return "Graphic_256x240";
-        }
-        return "Unknown";
-    }
-}
 
-void Vga::setup_draw_function(const vga::Mode mode)
+void Vga::setup_draw_function(void(*fun)(const uint32_t*, volatile uint32_t*))
 {
-    using Mode = vga::Mode;
-    switch (mode)
-    {
-        case Mode::Text_80x25:
-        {
-            // draw_func = &draw_800_wrapper;
-        } break;
-        case Mode::Graphic_256x240:
-        {
-            draw_func = &draw_256_wrapper;
-        } break;
-    }
+    draw_func = fun;
 }
 
 void Vga::initialize_hsync(const Timings& timings)
@@ -334,3 +314,5 @@ void Vga::initialize_vsync(const Timings& timings)
 // {
 //     std::memset(data, color, sizeof(data));
 // }
+
+} // namespace vga

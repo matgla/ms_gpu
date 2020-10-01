@@ -16,37 +16,50 @@
 
 #pragma once
 
-#include <variant>
+#include <msgui/fonts/Font5x7.hpp>
+
+#include <msgui/Position.hpp>
 
 #include "generator/vga.hpp"
-#include "modes/text/66x25.hpp"
 
 namespace vga
 {
-
-enum class Modes
+namespace modes
 {
-    Text_66x25 = 0,
-    Graphic_256x240 = 1
-};
-
-std::string_view to_string(Modes mode);
-
-class None
+namespace text
 {
-};
 
-class Mode
+class Mode66x25
 {
 public:
-    Mode(vga::Vga& vga);
+    Mode66x25(Vga& vga);
 
-    void switch_to(const Modes mode);
+    constexpr static int get_height()
+    {
+        return 25;
+    }
+
+    constexpr static int get_width()
+    {
+        return 66;
+    }
+
+    void write(int column, int row, char c);
+    void write(const char c);
+
+
 private:
-    std::variant<
-        None
-        , vga::modes::text::Mode66x25
-        > mode_;
+    void set_pixel(msgui::Position position, int color);
+
+    uint32_t *text_buffer_;
+
+    msgui::Position cursor_{0, 0};
+    vga::Vga vga_;
 };
 
+} // namespace text
+} // namespace modes
 } // namespace vga
+
+
+

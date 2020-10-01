@@ -16,6 +16,10 @@
 
 #include "processor/human_interface.hpp"
 
+#include <algorithm>
+
+#include <eul/mpl/tuples/for_each.hpp>
+
 #include "interfaces/usart.hpp"
 
 namespace processor
@@ -26,10 +30,34 @@ namespace
     Usart usart;
 }
 
+
+template <typename T, typename C>
+class Handler
+{
+public:
+    constexpr Handler(std::string_view name, C* object, T data) : handler_(name, std::make_pair(object, data))
+    {
+    }
+
+    std::pair<std::string_view, std::pair<C*, T>> handler_;
+};
+
+template <typename... handlers>
+class Handlers
+{
+public:
+    std::tuple<handlers...> handlers_;
+};
+
+
+template <typename... handlers>
+Handlers(handlers...) -> Handlers<handlers...>;
+
 HumanInterface::HumanInterface()
     : position_(0)
 {
-    usart.write("> ");
+    usart.write("\n> ");
+
 }
 
 void HumanInterface::process_command()
@@ -40,9 +68,21 @@ void HumanInterface::process_command()
     usart.write(buffer_);
     usart.write('\n');
     position_ = 0;
-
     to_parse_ = buffer_;
 
+    const auto command = get_next_part();
+
+    const static Handlers handlers {
+        Handler{"help", this, &HumanInterface::help}
+    };
+
+    eul::mpl::tuples::for_each(handlers.handlers_, [&command](const auto& handler) {
+        if (command == handler.handler_.first)
+        {
+            const auto* object = handler.handler_.second.first;
+            (object->*handler.handler_.second.second)();
+        }
+    });
 }
 
 void HumanInterface::process(uint8_t byte)
@@ -64,10 +104,23 @@ void HumanInterface::process(uint8_t byte)
     usart.write(byte);
 }
 
-std::string_view HumanInterface::get_part() const
+void HumanInterface::help() const
 {
+    usart.write("Available commands:\n");
+    usart.write("  mode [mode] - select display mode\n");
+    usart.write("To get more information please write help [command].\n");
+}
 
-
+std::string_view HumanInterface::get_next_part()
+{
+    if (to_parse_.empty())
+    {
+        return to_parse_;
+    }
+    to_parse_.remove_prefix(std::min(to_parse_.find_first_not_of(" "), to_parse_.size()));
+    const auto next_part = to_parse_.substr(0, std::min(to_parse_.find_first_not_of(" "), to_parse_.size()));
+    to_parse_.remove_suffix(next_part.size());
+    return next_part;
 }
 
 } // namespace processor

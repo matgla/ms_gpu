@@ -14,39 +14,38 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#pragma once
+#include "modes/modes.hpp"
 
-#include <variant>
-
-#include "generator/vga.hpp"
-#include "modes/text/66x25.hpp"
+#include <any>
 
 namespace vga
 {
 
-enum class Modes
+std::string_view to_string(Modes mode)
 {
-    Text_66x25 = 0,
-    Graphic_256x240 = 1
-};
+    switch (mode)
+    {
+        case Modes::Text_66x25: return "Text_66x25";
+        case Modes::Graphic_256x240: return "Graphic_256x240";
+    }
+    return "Unknown";
+}
 
-std::string_view to_string(Modes mode);
-
-class None
+Mode::Mode(vga::Vga& vga)
+    : mode_(None{})
+    , vga_(vga)
 {
-};
+}
 
-class Mode
+void Mode::switch_to(const Modes mode)
 {
-public:
-    Mode(vga::Vga& vga);
-
-    void switch_to(const Modes mode);
-private:
-    std::variant<
-        None
-        , vga::modes::text::Mode66x25
-        > mode_;
-};
+    switch (mode)
+    {
+        case Modes::Text_66x25:
+        {
+            mode_ = modes::text::Mode66x25(vga_);
+        } break;
+    }
+}
 
 } // namespace vga

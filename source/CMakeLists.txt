@@ -35,7 +35,6 @@ target_link_libraries(msgpu PRIVATE
     msgui
     vga_generator
     msgpu_interfaces
-    msgpu_video_ram
     msgpu_modes
     msgpu_processor
 )

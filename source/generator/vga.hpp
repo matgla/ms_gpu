@@ -23,22 +23,12 @@
 namespace vga
 {
 
-enum class Mode
-{
-    Text_80x25 = 0,
-    Graphic_256x240 = 1
-};
-
-std::string_view to_string(Mode mode);
-
-} // namespace vga
-
-
-
 class Vga
 {
 public:
     void initialize_hsync(const Timings& timings);
     void initialize_vsync(const Timings& timings);
-    void setup_draw_function(const vga::Mode mode);
+    void setup_draw_function(void(*fun)(const uint32_t*, volatile uint32_t*));
 };
+
+} // namespace vga

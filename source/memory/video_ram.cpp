@@ -16,13 +16,8 @@
 
 #include "memory/video_ram.hpp"
 
-namespace
-{
-    constexpr uint32_t video_memory_size = 1024 * 80;
-    static uint32_t memory[video_memory_size / sizeof(uint32_t)];
-}
-
 namespace vga
 {
+    static uint32_t memory[vga::video_ram_size / sizeof(uint32_t)];
     uint32_t* video_ram = memory;
 }

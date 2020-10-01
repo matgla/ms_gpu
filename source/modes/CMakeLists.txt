@@ -19,14 +19,25 @@ add_library(msgpu_modes)
 target_sources(msgpu_modes
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/modes.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/text/66x25.hpp
 
     PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/draw/draw_400_o.hpp
+
+        ${CMAKE_CURRENT_SOURCE_DIR}/modes.cpp
+
+
         ${CMAKE_CURRENT_SOURCE_DIR}/draw/draw_256.s
         ${CMAKE_CURRENT_SOURCE_DIR}/draw/draw_400_o.s
+        ${CMAKE_CURRENT_SOURCE_DIR}/draw/draw_400_o.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/text/66x25.cpp
 
 )
 
-target_link_libraries(msgpu_modes PRIVATE hal)
+target_link_libraries(msgpu_modes
+    PRIVATE msgpu_video_ram
+    PRIVATE hal msgui
+)
 
 target_compile_options(msgpu_modes PUBLIC
     $<$<COMPILE_LANGUAGE:CXX>:-std=c++2a>
@@ -34,4 +45,4 @@ target_compile_options(msgpu_modes PUBLIC
     $<$<CONFIG:RELEASE>:-Os>
 )
 
-target_include_directories(msgpu_modes PUBLIC ${PROJECT_SOURCE_DIR})
+target_include_directories(msgpu_modes PUBLIC ${PROJECT_SOURCE_DIR}/source)
