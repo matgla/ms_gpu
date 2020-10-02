@@ -25,6 +25,8 @@ public:
     static void initialize();
     static void write(const std::string_view& msg);
     static void write(char c);
+    static void write(int n);
+    static void write_hex(int n);
 
     static std::optional<char> read();
 

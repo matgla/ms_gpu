@@ -53,11 +53,11 @@ public:
 template <typename... handlers>
 Handlers(handlers...) -> Handlers<handlers...>;
 
-HumanInterface::HumanInterface()
+HumanInterface::HumanInterface(vga::Mode& mode)
     : position_(0)
+    , mode_(&mode)
 {
     usart.write("\n> ");
-
 }
 
 void HumanInterface::process_command()
@@ -87,21 +87,23 @@ void HumanInterface::process_command()
 
 void HumanInterface::process(uint8_t byte)
 {
-    if (byte == '\r' || byte == '\n')
-    {
-        process_command();
-        return;
-    }
+    // if (byte == '\r' || byte == '\n')
+    // {
+    //     process_command();
+    //     return;
+    // }
 
-    buffer_[position_] = byte;
+    // buffer_[position_] = byte;
 
-    ++position_;
-    if (position_ == 99)
-    {
-        process_command();
-        return;
-    }
-    usart.write(byte);
+    // ++position_;
+    // if (position_ == 99)
+    // {
+    //     process_command();
+    //     return;
+    // }
+    usart.write(static_cast<char>(byte));
+    mode_->write(static_cast<char>(byte));
+
 }
 
 void HumanInterface::help() const

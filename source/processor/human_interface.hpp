@@ -20,13 +20,15 @@
 #include <string_view>
 #include <tuple>
 
+#include "modes/modes.hpp"
+
 namespace processor
 {
 
 class HumanInterface
 {
 public:
-    HumanInterface();
+    HumanInterface(vga::Mode& mode);
 
     void process(uint8_t byte);
 
@@ -39,6 +41,7 @@ private:
     char buffer_[100];
     std::string_view to_parse_;
     int position_;
+    vga::Mode* mode_;
 };
 
 } // namespace processor

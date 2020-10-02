@@ -14,38 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#include "modes/draw/draw_480_6bit.hpp"
 
-.syntax unified
-.arch armv7-m
-.thumb
-
-// Draw optimized version of 400 pixel width
-.global draw_400_o
-draw_400_o:
-    // prepare
-    push {r2}
-
-    .rept 112
-        ldr r2, [r0] // load first 32 pixels 2C
-        strb r2, [r1]  // store to odr // 2C
-
-        .rept 3 // 3 next pixels in uint32_t
-            ror r2, r2, #0x6 // 1C
-            nop              // 1C
-            strb r2, [r1]    // 2C
-        .endr
-
-        // last pixel differs since data pointer must be incremented
-        ror r2, r2, #0x6 // 1C
-        add r0, #4       // 1C
-        strb r2, [r1]    // 2C
-    .endr
-
-    mov r2, #0x00 // 1C
-    nop
-    nop
-    strb r2, [r1] // 2C
-
-    pop {r2}
-    bx lr
-
+void draw_480_6bit_wrapper(const uint32_t* data, volatile uint32_t* odr)
+{
+    draw_480_6bit(data, odr);
+}

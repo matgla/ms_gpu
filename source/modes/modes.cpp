@@ -25,7 +25,7 @@ std::string_view to_string(Modes mode)
 {
     switch (mode)
     {
-        case Modes::Text_66x25: return "Text_66x25";
+        case Modes::Text_80x25: return "Text_80x25";
         case Modes::Graphic_256x240: return "Graphic_256x240";
     }
     return "Unknown";
@@ -41,11 +41,28 @@ void Mode::switch_to(const Modes mode)
 {
     switch (mode)
     {
-        case Modes::Text_66x25:
+        case Modes::Text_80x25:
         {
-            mode_ = modes::text::Mode66x25(vga_);
+            mode_ = modes::text::Mode80x25(vga_);
         } break;
     }
+}
+
+void Mode::render()
+{
+    std::visit([](auto&& mode) {
+        mode.render();
+    }, mode_);
+}
+
+void Mode::write(char c)
+{
+    std::visit([c](auto&& mode) {
+        if constexpr (std::is_same<typename std::decay<decltype(mode)>::type, vga::modes::text::Mode80x25>::value)
+        {
+            mode.write(c);
+        }
+    }, mode_);
 }
 
 } // namespace vga

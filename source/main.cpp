@@ -42,6 +42,7 @@ void nanosleep(timespec* ts, timespec *tc)
 #include "generator/timings.hpp"
 #include "interfaces/usart.hpp"
 #include "modes/modes.hpp"
+#include "memory/video_ram.hpp"
 
 #include "processor/command_processor.hpp"
 
@@ -91,12 +92,15 @@ int main()
     });
 
     hal::time::Time::init();
+    // hal::interrupt::s
     hal::interrupt::disable_systick();
 
     Usart usart;
     usart.initialize();
 
     vga::Vga vga;
+    vga::Mode mode(vga);
+    mode.switch_to(vga::Modes::Text_80x25);
     vga.initialize_hsync(svga_800x600_60);
     vga.initialize_vsync(svga_800x600_60);
 
@@ -108,10 +112,19 @@ int main()
 
     int escape_counter = 0;
     bool human_interface = false;
-    vga::Mode mode(vga);
-    processor::CommandProcessor processor;
+    processor::CommandProcessor processor(mode);
     while (true)
     {
+        if (vga.render())
+        {
+            mode.render();
+            vga.render(false);
+            // asm volatile inline ("wfi\n");
+        }
+        // for (int i = 0; i < 1000; ++i)
+        // {
+            // hal::time::sleep(std::chrono::microseconds(1000));
+        // }
         auto byte = usart.read();
         if (byte)
         {

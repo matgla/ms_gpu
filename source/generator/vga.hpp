@@ -26,9 +26,22 @@ namespace vga
 class Vga
 {
 public:
+    struct Config
+    {
+        void(*draw)(const uint32_t*, volatile uint32_t*);
+        int number_of_lines;
+        int lines_to_be_omitted;
+        int line_memory_offset;
+        int delay_for_line;
+        int line_multiplier;
+    };
+
     void initialize_hsync(const Timings& timings);
     void initialize_vsync(const Timings& timings);
-    void setup_draw_function(void(*fun)(const uint32_t*, volatile uint32_t*));
+    void setup(const Config& config);
+    bool is_vsync() const;
+    bool render() const;
+    void render(bool enable);
 };
 
 } // namespace vga

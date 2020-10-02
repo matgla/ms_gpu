@@ -28,7 +28,7 @@ target_sources(msgpu_processor
 )
 
 
-target_link_libraries(msgpu_processor PUBLIC hal)
+target_link_libraries(msgpu_processor PUBLIC hal msgpu_modes msgui)
 
 target_compile_options(msgpu_processor PUBLIC
     $<$<COMPILE_LANGUAGE:CXX>:-std=c++2a>

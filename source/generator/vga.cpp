@@ -73,16 +73,29 @@ extern "C"
         draw_256(data, odr);
     }
 
-    static void(*draw_func)(const uint32_t*, volatile uint32_t*) = &draw_256_wrapper;
+    static vga::Vga::Config config {
+        .draw = &draw_256_wrapper,
+        .number_of_lines = 240,
+        .lines_to_be_omitted = 0,
+        .line_memory_offset = 64,
+        .delay_for_line = 46,
+        .line_multiplier = 2
+    };
+
     int line_counter = 0;
     int image_line = 0;
-    int empty_lines = 60;
+    int empty_lines = 10;
+    bool render = false;
 
     inline void draw()
     {
         if (empty_lines != 0) return;
-        if (image_line == 240) return;
-        draw_func(&vga::video_ram[image_line * 64], static_cast<volatile uint32_t*>(&GPIOA->ODR));
+        if (image_line == config.number_of_lines) return;
+        // if (image_line != 0)
+        // {
+            // first line is slower than rest, so rest of them must be delayed
+        // }
+        config.draw(&vga::video_ram[image_line * config.line_memory_offset], static_cast<volatile uint32_t*>(&GPIOA->ODR));
     }
 
     bool is_vsync = false;
@@ -95,25 +108,26 @@ extern "C"
         {
             if (!is_vsync)
             {
-                draw();
                 if (empty_lines)
                 {
                     --empty_lines;
                 }
                 else
                 {
-                    if (line_counter % 2)
+                    draw();
+                    if (line_counter % 2) // TODO: also configure by some settings
                     {
-                        if (image_line < 240)
+                        if (image_line < config.number_of_lines)
                         {
                             ++image_line;
                         }
                     }
                 }
             }
-            if (++line_counter == 598)
+            if (++line_counter == 599)
             {
                 is_vsync = true;
+                render = true;
             }
             __HAL_TIM_CLEAR_IT(&tim3, TIM_FLAG_CC2);
         }
@@ -132,8 +146,9 @@ extern "C"
 
             line_counter = 0;
             is_vsync = false;
-            image_line =0;
-            empty_lines = 60;
+
+            image_line = 0;
+            empty_lines = config.lines_to_be_omitted + 10;
             __HAL_TIM_CLEAR_IT(&tim4, TIM_FLAG_CC4);
         }
         else
@@ -147,9 +162,35 @@ extern "C"
 namespace vga
 {
 
-void Vga::setup_draw_function(void(*fun)(const uint32_t*, volatile uint32_t*))
+void Vga::setup(const Config& c)
 {
-    draw_func = fun;
+    config = c;
+    empty_lines = c.lines_to_be_omitted + 10;
+    // initialize_hsync(svga_800x600_60);
+
+    const float clocks_in_pixel = HAL_RCC_GetHCLKFreq() / 1000000 / svga_800x600_60.pixel_frequency;
+    const int sync_time =  svga_800x600_60.line.sync_pulse_pixels * clocks_in_pixel - 1;
+    const int back_porch_time = clocks_in_pixel * svga_800x600_60.line.back_porch_pixels + sync_time;
+    const int delay_for_draw_start = config.delay_for_line;
+    TIM_OC_InitTypeDef oc;
+    oc.OCMode = TIM_OCMODE_INACTIVE;
+    oc.Pulse = back_porch_time - delay_for_draw_start;
+    HAL_TIM_OC_ConfigChannel(&tim3, &oc, TIM_CHANNEL_2);
+}
+
+bool Vga::is_vsync() const
+{
+    return ::is_vsync;
+}
+
+bool Vga::render() const
+{
+    return ::render;
+}
+
+void Vga::render(bool enable)
+{
+    ::render = enable;
 }
 
 void Vga::initialize_hsync(const Timings& timings)
@@ -190,7 +231,7 @@ void Vga::initialize_hsync(const Timings& timings)
     HAL_NVIC_EnableIRQ(TIM2_IRQn);
 
     oc.OCMode = TIM_OCMODE_INACTIVE;
-    oc.Pulse = 100; // test value
+    oc.Pulse = 10; // test value
     HAL_TIM_OC_ConfigChannel(&tim2, &oc, TIM_CHANNEL_2);
     __HAL_TIM_ENABLE_IT(&tim2, TIM_IT_CC2);
 
@@ -217,7 +258,7 @@ void Vga::initialize_hsync(const Timings& timings)
 
     oc.OCMode = TIM_OCMODE_INACTIVE;
     const int back_porch_time = clocks_in_pixel * timings.line.back_porch_pixels + sync_time;
-    const int delay_for_draw_start = 46;
+    const int delay_for_draw_start = config.delay_for_line;
     oc.Pulse = back_porch_time - delay_for_draw_start;
     HAL_TIM_OC_ConfigChannel(&tim3, &oc, TIM_CHANNEL_2);
     __HAL_TIM_ENABLE_IT(&tim3, TIM_IT_CC2);
@@ -283,7 +324,7 @@ void Vga::initialize_vsync(const Timings& timings)
     HAL_TIM_PWM_ConfigChannel(&tim4, &oc, TIM_CHANNEL_3);
 
     oc.OCMode = TIM_OCMODE_INACTIVE;
-    oc.Pulse = timings.frame.sync_pulse_lines + timings.frame.back_porch_lines - 2;
+    oc.Pulse = timings.frame.sync_pulse_lines + timings.frame.back_porch_lines;
     HAL_TIM_OC_ConfigChannel(&tim4, &oc, TIM_CHANNEL_4);
     __HAL_TIM_ENABLE_IT(&tim4, TIM_IT_CC4);
 

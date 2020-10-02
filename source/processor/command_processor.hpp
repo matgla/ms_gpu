@@ -22,20 +22,21 @@
 
 #include "processor/human_interface.hpp"
 #include "processor/machine_interface.hpp"
-
+#include "modes/modes.hpp"
 namespace processor
 {
 
 class CommandProcessor
 {
 public:
-    CommandProcessor();
+    CommandProcessor(vga::Mode& mode);
 
     void change();
 
     void process(uint8_t byte);
 
 private:
+    vga::Mode& mode_;
     std::variant<MachineInterface, HumanInterface> interface_;
 };
 

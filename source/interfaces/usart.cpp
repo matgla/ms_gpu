@@ -74,12 +74,26 @@ void Usart::write(char c)
     HAL_UART_Transmit(&usart, reinterpret_cast<uint8_t*>(&c), 1, 100);
 }
 
+void Usart::write(int n)
+{
+    char buf[100];
+    eul::utils::itoa(n, buf, 10);
+    Usart::write(buf);
+}
+
+void Usart::write_hex(int n)
+{
+    char buf[100];
+    eul::utils::itoa(n, buf, 10);
+    Usart::write(buf);
+}
+
+
 std::optional<char> Usart::read()
 {
-    char c = 0;
-    if (HAL_UART_Receive(&usart, reinterpret_cast<uint8_t*>(&c), 1, 1) == HAL_OK)
+    if(__HAL_UART_GET_FLAG(&usart, UART_FLAG_RXNE) == SET)
     {
-        return c;
+        return USART1->DR;
     }
     return {};
 }

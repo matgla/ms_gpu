@@ -14,52 +14,43 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#pragma once
 
-#include <msgui/fonts/Font5x7.hpp>
+.syntax unified
+.arch armv7-m
+.thumb
 
-#include <msgui/Position.hpp>
+// Draw optimized version of 400 pixel width
+.global draw_480_6bit
+draw_480_6bit:
+    // prepare
+    push {r2}
 
-#include "generator/vga.hpp"
+    .rept 60
+        nop
+    .endr
 
-namespace vga
-{
-namespace modes
-{
-namespace text
-{
+    .rept 96
+        ldr r2, [r0] // load first 32 pixels 2C
+        nop
+        strb r2, [r1]  // store to odr // 2C
 
-class Mode66x25
-{
-public:
-    Mode66x25(Vga& vga);
+        .rept 3 // 3 next pixels in uint32_t
+            ror r2, r2, #0x6 // 1C
+            nop
+            strb r2, [r1]    // 2C
+        .endr
 
-    constexpr static int get_height()
-    {
-        return 25;
-    }
+        // last pixel differs since data pointer must be incremented
+        ror r2, r2, #0x6 // 1C
+        add r0, #4       // 1C
+        strb r2, [r1]    // 2C
+    .endr
 
-    constexpr static int get_width()
-    {
-        return 66;
-    }
+    mov r2, #0x00 // 1C
+    nop
+    nop
+    strb r2, [r1] // 2C
 
-    void write(int column, int row, char c);
-    void write(const char c);
-
-
-private:
-    void set_pixel(msgui::Position position, int color);
-
-    uint32_t *text_buffer_;
-
-    msgui::Position cursor_{0, 0};
-    vga::Vga vga_;
-};
-
-} // namespace text
-} // namespace modes
-} // namespace vga
-
-
+    pop {r2}
+    bx lr
 
