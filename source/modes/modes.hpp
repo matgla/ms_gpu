@@ -35,6 +35,7 @@ std::string_view to_string(Modes mode);
 class None
 {
 public:
+    using type = void;
     void render()
     {
     }
@@ -48,7 +49,13 @@ public:
     void switch_to(const Modes mode);
     void render();
     void write(char c);
-
+    void move_cursor(int row, int column);
+    void set_cursor(int row, int column);
+    void set_cursor_row(int row);
+    void set_cursor_column(int column);
+    void set_foreground_color(int foreground);
+    void set_background_color(int background);
+    void set_color(int foreground, int background);
 private:
     std::variant<
         None

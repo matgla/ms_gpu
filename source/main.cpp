@@ -113,6 +113,8 @@ int main()
     int escape_counter = 0;
     bool human_interface = false;
     processor::CommandProcessor processor(mode);
+    processor.change();
+
     while (true)
     {
         if (vga.render())
@@ -125,8 +127,9 @@ int main()
         // {
             // hal::time::sleep(std::chrono::microseconds(1000));
         // }
-        auto byte = usart.read();
-        if (byte)
+        auto data = usart.read();
+
+        for (char byte : data)
         {
             if (byte == 27)
             {
@@ -136,12 +139,12 @@ int main()
                     processor.change();
                     escape_counter = 0;
                 }
+                processor.process(byte);
                 continue;
             }
             escape_counter = 0;
-            processor.process(*byte);
+            processor.process(byte);
         }
-
 
         /* command.remove_prefix(std::min(command.find_first_not_of(" "), command.size()));
         command.remove_suffix(command.size() - command.find_last_not_of(" ") - 1);

@@ -23,7 +23,10 @@
 #include <stm32f4xx_hal_uart.h>
 #include <stm32f4xx_hal_usart.h>
 
+
 #include <eul/utils/string.hpp>
+
+#include <hal/time/sleep.hpp>
 
 namespace
 {
@@ -53,7 +56,7 @@ void Usart::initialize()
     HAL_GPIO_Init(GPIOB, &gpio);
 
     usart.Instance = USART1;
-    usart.Init.BaudRate = 112500;
+    usart.Init.BaudRate = 115200;
     usart.Init.WordLength   = UART_WORDLENGTH_8B;
     usart.Init.StopBits     = UART_STOPBITS_1;
     usart.Init.Parity       = UART_PARITY_NONE;
@@ -63,6 +66,8 @@ void Usart::initialize()
 
     HAL_UART_Init(&usart);
 }
+
+uint8_t buffer[50];
 
 void Usart::write(const std::string_view& msg)
 {
@@ -89,11 +94,24 @@ void Usart::write_hex(int n)
 }
 
 
-std::optional<char> Usart::read()
+std::string_view Usart::read()
 {
-    if(__HAL_UART_GET_FLAG(&usart, UART_FLAG_RXNE) == SET)
+    int i = 0;
+    int timeout = 0;
+    while (i < 49)
     {
-        return USART1->DR;
+        while (__HAL_UART_GET_FLAG(&usart, UART_FLAG_RXNE) == RESET)
+        {
+            if (++timeout > 100000)
+            {
+                buffer[i] = 0;
+                return reinterpret_cast<const char*>(buffer);
+            }
+        }
+        buffer[i] = USART1->DR & 0xff;
+        ++i;
     }
-    return {};
+
+    buffer[i] = 0;
+    return reinterpret_cast<const char*>(buffer);
 }

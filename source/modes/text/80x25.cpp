@@ -36,6 +36,10 @@ namespace text
 
 namespace
 {
+    // 76800 frame buffer
+    // 2000 text buffer
+    // 250 delta
+    // 4000 attributes
 constexpr int font_height = 8;
 constexpr int font_width = 6;
 
@@ -56,7 +60,7 @@ constexpr uint32_t get_mask(const auto& bitmap, const int y, const int x)
     return bitmap.getPixel(x, y) == 1 ? 0x1F : 0x00;
 }
 
-void Mode80x25::render_font(const auto& bitmap, const int row, const int column, const int color)
+void Mode80x25::render_font(const auto& bitmap, const int row, const int column, const int foreground, const int background)
 {
     for (int y = 0; y < 7; ++y)
     {
@@ -64,18 +68,18 @@ void Mode80x25::render_font(const auto& bitmap, const int row, const int column,
         {
             if (bitmap.getPixel(x, y))
             {
-                set_pixel({.x = column + x, .y = row + y}, color);
+                set_pixel({.x = column + x, .y = row + y}, foreground);
             }
             else
             {
-                set_pixel({.x = column + x, .y = row + y}, 0);
+                set_pixel({.x = column + x, .y = row + y}, background);
             }
         }
-        set_pixel({.x = column + 5, .y = row + y}, 0);
+        set_pixel({.x = column + 5, .y = row + y}, background);
     }
     for (int x = 0; x < 6; ++x)
     {
-        set_pixel({.x = column + x, .y = row + 7}, 0);
+        set_pixel({.x = column + x, .y = row + 7}, background);
     }
 }
 
@@ -83,6 +87,7 @@ Mode80x25::Mode80x25(vga::Vga& vga)
     : text_buffer_(reinterpret_cast<char*>(
         reinterpret_cast<uint8_t*>(video_ram) + video_ram_size))
     , changed_bitmap_(reinterpret_cast<uint8_t*>(video_ram) + (video_ram_size + text_buffer_size))
+    , attributes_(reinterpret_cast<uint16_t*>(changed_bitmap_ + delta_size))
 {
     std::memset(changed_bitmap_, 0, delta_size);
     Vga::Config config {
@@ -94,34 +99,55 @@ Mode80x25::Mode80x25(vga::Vga& vga)
         .line_multiplier = 2
     };
     vga.setup(config);
-    // set_pixel({.x = 0, .y = 0}, 15);
-    // set_pixel({.x = 10, .y = 10}, 15);
-
-    // for (int i = 0; i < 400; ++i)
-    // {
-    //     set_pixel({.x = i, .y = 0}, 15);
-    // }
-    // for (int i = 0; i < get_width(); ++i)
-    // // {
-    // //     set_pixel({.x = i, .y = 0}, 15);
-    // // }
-    // video_ram[0] = 0x0f;
     render_test_box();
 
     std::memset(text_buffer_, 0, get_width() * get_height());
-    // for (int y = 0; y < get_height(); ++y)
-    // {
-    //     for (int x = 0; x < get_width(); ++x)
-    //     {
-    //         const char c = text_buffer_[y * get_width() + x];
-    //         if (c != 0)
-    //         {
-    //             render_font(font.get(c), y * font_height, x * font_width, 10);
-    //         }
-    //     }
-    // }
-
 }
+
+void Mode80x25::move_cursor(int row_offset, int column_offset)
+{
+    if (row_offset + cursor_row_ >= get_height() || row_offset + cursor_row_ < 0)
+    {
+        return;
+    }
+
+    if (column_offset + cursor_column_ >= get_width() || column_offset + cursor_column_ < 0)
+    {
+        return;
+    }
+
+    const int char_position = cursor_row_ * 10 + cursor_column_ / 8;
+    const int offset = cursor_column_ % 8;
+    changed_bitmap_[char_position] &= ~(0x1 << offset);
+    changed_bitmap_[char_position] |= 0x1 << offset;
+
+    cursor_column_ += column_offset;
+    cursor_row_ += row_offset;
+    force_trigger_ = true;
+}
+
+void Mode80x25::set_cursor_row(int row)
+{
+    if (row >= 0 && row <= get_height())
+    {
+        cursor_row_ = row;
+    }
+}
+
+void Mode80x25::set_cursor_column(int column)
+{
+    if (column >= 0 && column <= get_width())
+    {
+        cursor_column_ = column;
+    }
+}
+
+void Mode80x25::set_cursor(int row, int column)
+{
+    set_cursor_row(row);
+    set_cursor_column(column);
+}
+
 
 void Mode80x25::render_test_box()
 {
@@ -144,6 +170,7 @@ void Mode80x25::write(uint8_t row, uint8_t column, char c)
 
     cursor_column_ = column + 1;
     cursor_row_ = row;
+    force_trigger_ = true;
 
     if (cursor_column_ >= get_width())
     {
@@ -164,6 +191,9 @@ void Mode80x25::write(uint8_t row, uint8_t column, char c)
     const int offset = column % 8;
     changed_bitmap_[char_position] &= ~(0x1 << offset);
     changed_bitmap_[char_position] |= 0x1 << offset;
+
+    const int attribute_position = row * get_width() + column;
+    attributes_[attribute_position] = foreground_ | (background_ << 6);
 }
 
 void Mode80x25::write(char c)
@@ -171,12 +201,60 @@ void Mode80x25::write(char c)
     write(cursor_row_, cursor_column_, c);
 }
 
+void Mode80x25::set_foreground_color(int foreground)
+{
+    foreground_ = foreground;
+}
+
+void Mode80x25::set_background_color(int background)
+{
+    background_ = background;
+}
+
+void Mode80x25::set_color(int foreground, int background)
+{
+    set_foreground_color(foreground);
+    set_background_color(background);
+}
+
+
 bool one = true;
 int counter = 0;
 void Mode80x25::render()
 {
+    // render screen
 
-    if (++counter > 30)
+    for (int y = 0; y < get_height(); ++y)
+    {
+        for (int x = 0; x < 10; ++x)
+        {
+            const int char_position = y * 10 + x;
+
+
+            if (changed_bitmap_[char_position])
+            {
+                for (int i = 0; i < 8; ++i)
+                {
+                    if (changed_bitmap_[char_position] & (1 << i))
+                    {
+                        const char c = text_buffer_[y * 80 + (8 * x) + i];
+
+                        const int attribute_position = y * get_width() + (x * 8 + i);
+                        const int foreground = attributes_[attribute_position] & 0x3f;
+                        const int background = (attributes_[attribute_position] >> 6) & 0x3f;
+
+                        render_font(font.get(c), y * font_height, x * 8 * font_width + i * font_width, foreground, background);
+                    }
+                }
+            }
+        }
+    }
+
+    std::memset(changed_bitmap_, 0, delta_size);
+
+    // render cursor
+
+        if (++counter > 30)
     {
         counter = 0;
         int pixel = 0;
@@ -199,33 +277,18 @@ void Mode80x25::render()
         }
     }
 
-
-    // render screen
-
-    for (int y = 0; y < get_height(); ++y)
+    if (force_trigger_)
     {
-        for (int x = 0; x < 10; ++x)
+        force_trigger_ = false;
+        for (int y = 0; y < font_height; y++)
         {
-            const int char_position = y * 10 + x;
-
-
-            if (changed_bitmap_[char_position])
+            for (int x = 0; x < font_width; x++)
             {
-                for (int i = 0; i < 8; ++i)
-                {
-                    if (changed_bitmap_[char_position] & (1 << i))
-                    {
-                        const char c = text_buffer_[y * 80 + (8 * x) + i];
-                        render_font(font.get(c), y * font_height, x * 8 * font_width + i * font_width, 63);
-                    }
-                }
+                set_pixel({.x = cursor_column_ * font_width + x, .y = cursor_row_ * font_height + y}, 63);
             }
         }
     }
 
-    std::memset(changed_bitmap_, 0, delta_size);
-
-    // render cursor
 
 
 
@@ -249,7 +312,6 @@ int Mode80x25::get_pixel(msgui::Position position)
     const int offset = bits_per_pixel * (position.x % pixels_in_4bytes);
     return video_ram[pixel_slot] &= (0x3f << offset) >> offset;
 }
-
 
 } // namespace text
 } // namespace modes

@@ -58,11 +58,82 @@ void Mode::render()
 void Mode::write(char c)
 {
     std::visit([c](auto&& mode) {
-        if constexpr (std::is_same<typename std::decay<decltype(mode)>::type, vga::modes::text::Mode80x25>::value)
+        if constexpr (std::is_same<typename std::decay_t<decltype(mode)>::type, vga::modes::Text>::value)
         {
             mode.write(c);
         }
     }, mode_);
 }
+
+void Mode::move_cursor(int row, int column)
+{
+    std::visit([row, column](auto&& mode) {
+        if constexpr (std::is_same<typename std::decay_t<decltype(mode)>::type, vga::modes::Text>::value)
+        {
+            mode.move_cursor(row, column);
+        }
+    }, mode_);
+}
+
+void Mode::set_cursor(int row, int column)
+{
+    std::visit([row, column](auto&& mode) {
+        if constexpr (std::is_same<typename std::decay_t<decltype(mode)>::type, vga::modes::Text>::value)
+        {
+            mode.set_cursor(row, column);
+        }
+    }, mode_);
+}
+
+void Mode::set_cursor_row(int row)
+{
+    std::visit([row](auto&& mode) {
+        if constexpr (std::is_same<typename std::decay_t<decltype(mode)>::type, vga::modes::Text>::value)
+        {
+            mode.set_cursor_row(row);
+        }
+    }, mode_);
+}
+
+void Mode::set_cursor_column(int column)
+{
+    std::visit([column](auto&& mode) {
+        if constexpr (std::is_same<typename std::decay_t<decltype(mode)>::type, vga::modes::Text>::value)
+        {
+            mode.set_cursor_column(column);
+        }
+    }, mode_);
+}
+
+void Mode::set_foreground_color(int foreground)
+{
+    std::visit([foreground](auto&& mode) {
+        if constexpr (std::is_same<typename std::decay_t<decltype(mode)>::type, vga::modes::Text>::value)
+        {
+            mode.set_foreground_color(foreground);
+        }
+    }, mode_);
+}
+
+void Mode::set_background_color(int background)
+{
+    std::visit([background](auto&& mode) {
+        if constexpr (std::is_same<typename std::decay_t<decltype(mode)>::type, vga::modes::Text>::value)
+        {
+            mode.set_background_color(background);
+        }
+    }, mode_);
+}
+
+void Mode::set_color(int foreground, int background)
+{
+    std::visit([foreground, background](auto&& mode) {
+        if constexpr (std::is_same<typename std::decay_t<decltype(mode)>::type, vga::modes::Text>::value)
+        {
+            mode.set_color(foreground, background);
+        }
+    }, mode_);
+}
+
 
 } // namespace vga

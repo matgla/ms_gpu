@@ -28,6 +28,6 @@ public:
     static void write(int n);
     static void write_hex(int n);
 
-    static std::optional<char> read();
+    static std::string_view read();
 
 };

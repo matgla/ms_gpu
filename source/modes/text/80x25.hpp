@@ -22,6 +22,8 @@
 
 #include "generator/vga.hpp"
 
+#include "modes/types.hpp"
+
 namespace vga
 {
 namespace modes
@@ -32,6 +34,7 @@ namespace text
 class Mode80x25
 {
 public:
+    using type = Text;
     Mode80x25(Vga& vga);
 
     constexpr static int get_height()
@@ -51,17 +54,30 @@ public:
     void render();
     int get_pixel(msgui::Position position);
 
+    void move_cursor(int row_offset, int column_offset);
+
+    void set_cursor_row(int row);
+    void set_cursor_column(int column);
+    void set_cursor(int row, int column);
+    void set_foreground_color(int foreground);
+    void set_background_color(int background);
+    void set_color(int foreground, int background);
 private:
     void set_pixel(msgui::Position position, int color);
-    void render_font(const auto& bitmap, const int row, const int column, const int color);
+    void render_font(const auto& bitmap, const int row, const int column, const int foreground, const int background);
 
     char *text_buffer_;
     uint8_t* changed_bitmap_;
+    uint16_t* attributes_;
+
+    int foreground_ = 63;
+    int background_ = 0;
 
     uint8_t cursor_row_{0};
     uint8_t cursor_column_{0};
 
     vga::Vga vga_;
+    bool force_trigger_ {false};
 };
 
 } // namespace text

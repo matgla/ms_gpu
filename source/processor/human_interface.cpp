@@ -101,7 +101,124 @@ void HumanInterface::process(uint8_t byte)
     //     process_command();
     //     return;
     // }
-    usart.write(static_cast<char>(byte));
+
+    // backspace
+    if (byte == 8)
+    {
+        mode_->move_cursor(0, -1);
+        mode_->write(0);
+        mode_->move_cursor(0, -1);
+
+        return;
+    }
+
+    // enter
+    if (byte == 13)
+    {
+        mode_->move_cursor(1, 0);
+        mode_->set_cursor_column(0);
+
+        return;
+    }
+
+    if (escape_code_)
+    {
+        escape_code_ = false;
+        usart.write("Escape code: ");
+        usart.write(byte);
+        usart.write('\n');
+        switch (byte)
+        {
+            case 91:
+            {
+                cursor_move_ = true;
+                return;
+            }
+        }
+    }
+
+    if (cursor_move_)
+    {
+        cursor_move_ = false;
+        usart.write("move code: ");
+        usart.write(byte);
+        usart.write('\n');
+        switch (byte)
+        {
+            // left
+            case 68:
+            {
+                mode_->move_cursor(0, -1);
+                return;
+            }
+            // right
+            case 67:
+            {
+                mode_->move_cursor(0, 1);
+                return;
+            }
+            // up
+            case 65:
+            {
+                mode_->move_cursor(-1, 0);
+                return;
+            }
+            // down
+            case 66:
+            {
+                mode_->move_cursor(1, 0);
+                return;
+            }
+            case 30: // foreground black
+            {
+                mode_->set_foreground_color(0);
+                return;
+            }
+            case 31: // foreground red
+            {
+                mode_->set_foreground_color(3);
+                return;
+            }
+            case 32: // foreground green
+            {
+                mode_->set_foreground_color(12);
+                return;
+            }
+            case 33: // foreground yellow
+            {
+                mode_->set_foreground_color(15);
+                return;
+            }
+            case 34: // foreground blue
+            {
+                mode_->set_foreground_color(0x30);
+                return;
+            }
+            case 35: // foreground magenta
+            {
+                mode_->set_foreground_color(0x33);
+                return;
+            }
+            case 36: // fg cyan
+            {
+                mode_->set_foreground_color(0x3c);
+                return;
+            }
+            case 37: // fg white
+            {
+                mode_->set_foreground_color(0x3f);
+                return;
+            }
+        }
+    }
+
+    if (byte == 27)
+    {
+        usart.write("ESC");
+        escape_code_ = true;
+        return;
+    }
+    usart.write(byte);
     mode_->write(static_cast<char>(byte));
 
 }

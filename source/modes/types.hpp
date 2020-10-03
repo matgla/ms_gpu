@@ -16,34 +16,10 @@
 
 #pragma once
 
-#include <cstdint>
-#include <string_view>
-#include <tuple>
-
-#include "modes/modes.hpp"
-
-namespace processor
+namespace vga::modes
 {
 
-class HumanInterface
-{
-public:
-    HumanInterface(vga::Mode& mode);
+class Text;
+class Graphic;
 
-    void process(uint8_t byte);
-
-private:
-    void process_command();
-    std::string_view get_next_part();
-
-    void help() const;
-
-    char buffer_[100];
-    std::string_view to_parse_;
-    int position_;
-    vga::Mode* mode_;
-    bool escape_code_ = false;
-    bool cursor_move_ = false;
-};
-
-} // namespace processor
+} // namespace vga::modes
