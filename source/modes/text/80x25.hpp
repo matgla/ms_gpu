@@ -35,6 +35,7 @@ class Mode80x25
 {
 public:
     using type = Text;
+
     Mode80x25(Vga& vga);
 
     constexpr static int get_height()

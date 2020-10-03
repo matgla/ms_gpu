@@ -18,6 +18,7 @@ add_library(msgpu_modes)
 
 target_sources(msgpu_modes
     PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/colors.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/modes.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/text/80x25.hpp
 

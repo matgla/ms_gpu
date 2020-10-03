@@ -40,18 +40,25 @@ namespace
     // 2000 text buffer
     // 250 delta
     // 4000 attributes
-constexpr int font_height = 8;
-constexpr int font_width = 6;
 
-constexpr int width_pixels = 480;
-constexpr int height_pixels = 200;
+template <typename Font>
+struct Configuration
+{
+    constexpr static auto font = Font::data;
 
-constexpr auto font = msgui::fonts::Font5x7::data;
+    constexpr static int character_height = font::height + 1;
+    constexpr static int character_width = font::width + 1;
 
-constexpr int video_ram_size = width_pixels * height_pixels * 0.8 + 4;
-constexpr int text_buffer_size = 80 * 25;
-constexpr int attributes_size = 80 * 25;
-constexpr int delta_size = 80 * 25 / 8;
+    constexpr static int resolution_width = 480;
+    constexpr static int resolution_height = 200;
+
+    constexpr static int video_ram_size = resolution_width * resolution_height * 0.8;
+    constexpr static int text_buffer_size = 80 * 25;
+    constexpr static int attributes_size = 80 * 25 * 2;
+    constexpr static int delta_bitmap_size = 80 * 25 / 8;
+};
+
+constexpr static Configuration<msgui::fonts::Font5x7> configuration;
 
 }
 
@@ -87,14 +94,14 @@ Mode80x25::Mode80x25(vga::Vga& vga)
     : text_buffer_(reinterpret_cast<char*>(
         reinterpret_cast<uint8_t*>(video_ram) + video_ram_size))
     , changed_bitmap_(reinterpret_cast<uint8_t*>(video_ram) + (video_ram_size + text_buffer_size))
-    , attributes_(reinterpret_cast<uint16_t*>(changed_bitmap_ + delta_size))
+    , attributes_(reinterpret_cast<uint16_t*>(changed_bitmap_ + delta_bitmap_size))
 {
-    std::memset(changed_bitmap_, 0, delta_size);
+    std::memset(changed_bitmap_, 0, delta_bitmap_size);
     Vga::Config config {
         .draw = &draw_480_6bit_wrapper,
-        .number_of_lines = get_height() * font_height,
+        .number_of_lines = get_height() * character_height,
         .lines_to_be_omitted = 1,
-        .line_memory_offset = width_pixels / 5,
+        .line_memory_offset = resolution_width / 5,
         .delay_for_line = 70,
         .line_multiplier = 2
     };
@@ -151,12 +158,12 @@ void Mode80x25::set_cursor(int row, int column)
 
 void Mode80x25::render_test_box()
 {
-    for (int i = 0; i < width_pixels; ++i)
+    for (int i = 0; i < resolution_width; ++i)
     {
         set_pixel({.x = i, .y = 0}, 15);
-        set_pixel({.x = 0, .y = i % height_pixels}, 20);
-        set_pixel({.x = width_pixels - 1, .y = i % height_pixels}, 17);
-        set_pixel({.x = i, .y = height_pixels - 1}, 18);
+        set_pixel({.x = 0, .y = i % resolution_height}, 20);
+        set_pixel({.x = resolution_width - 1, .y = i % resolution_height}, 17);
+        set_pixel({.x = i, .y = resolution_height - 1}, 18);
     }
 }
 
@@ -243,14 +250,14 @@ void Mode80x25::render()
                         const int foreground = attributes_[attribute_position] & 0x3f;
                         const int background = (attributes_[attribute_position] >> 6) & 0x3f;
 
-                        render_font(font.get(c), y * font_height, x * 8 * font_width + i * font_width, foreground, background);
+                        render_font(font.get(c), y * character_height, x * 8 * character_width + i * character_width, foreground, background);
                     }
                 }
             }
         }
     }
 
-    std::memset(changed_bitmap_, 0, delta_size);
+    std::memset(changed_bitmap_, 0, delta_bitmap_size);
 
     // render cursor
 
@@ -268,11 +275,11 @@ void Mode80x25::render()
             one = true;
         }
 
-        for (int y = 0; y < font_height; y++)
+        for (int y = 0; y < character_height; y++)
         {
-            for (int x = 0; x < font_width; x++)
+            for (int x = 0; x < character_width; x++)
             {
-                set_pixel({.x = cursor_column_ * font_width + x, .y = cursor_row_ * font_height + y}, pixel);
+                set_pixel({.x = cursor_column_ * character_width + x, .y = cursor_row_ * character_height + y}, pixel);
             }
         }
     }
@@ -280,11 +287,11 @@ void Mode80x25::render()
     if (force_trigger_)
     {
         force_trigger_ = false;
-        for (int y = 0; y < font_height; y++)
+        for (int y = 0; y < character_height; y++)
         {
-            for (int x = 0; x < font_width; x++)
+            for (int x = 0; x < character_width; x++)
             {
-                set_pixel({.x = cursor_column_ * font_width + x, .y = cursor_row_ * font_height + y}, 63);
+                set_pixel({.x = cursor_column_ * character_width + x, .y = cursor_row_ * character_height + y}, 63);
             }
         }
     }
@@ -296,7 +303,7 @@ void Mode80x25::render()
 
 void Mode80x25::set_pixel(msgui::Position position, int color)
 {
-    const int pixel_slot = position.y * width_pixels / 5 + position.x / 5; // 5 pixels in uint32_t
+    const int pixel_slot = position.y * resolution_width / 5 + position.x / 5; // 5 pixels in uint32_t
     constexpr int bits_per_pixel = 6;
     constexpr int pixels_in_4bytes = 5;
     const int offset = bits_per_pixel * (position.x % pixels_in_4bytes);
@@ -306,7 +313,7 @@ void Mode80x25::set_pixel(msgui::Position position, int color)
 
 int Mode80x25::get_pixel(msgui::Position position)
 {
-    const int pixel_slot = position.y * width_pixels / 5 + position.x / 5; // 5 pixels in uint32_t
+    const int pixel_slot = position.y * resolution_width / 5 + position.x / 5; // 5 pixels in uint32_t
     constexpr int bits_per_pixel = 6;
     constexpr int pixels_in_4bytes = 5;
     const int offset = bits_per_pixel * (position.x % pixels_in_4bytes);

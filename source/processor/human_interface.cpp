@@ -21,6 +21,7 @@
 #include <eul/mpl/tuples/for_each.hpp>
 
 #include "interfaces/usart.hpp"
+#include "modes/colors.hpp"
 
 namespace processor
 {
@@ -87,21 +88,6 @@ void HumanInterface::process_command()
 
 void HumanInterface::process(uint8_t byte)
 {
-    // if (byte == '\r' || byte == '\n')
-    // {
-    //     process_command();
-    //     return;
-    // }
-
-    // buffer_[position_] = byte;
-
-    // ++position_;
-    // if (position_ == 99)
-    // {
-    //     process_command();
-    //     return;
-    // }
-
     // backspace
     if (byte == 8)
     {
@@ -124,9 +110,6 @@ void HumanInterface::process(uint8_t byte)
     if (escape_code_)
     {
         escape_code_ = false;
-        usart.write("Escape code: ");
-        usart.write(byte);
-        usart.write('\n');
         switch (byte)
         {
             case 91:
@@ -140,9 +123,6 @@ void HumanInterface::process(uint8_t byte)
     if (cursor_move_)
     {
         cursor_move_ = false;
-        usart.write("move code: ");
-        usart.write(byte);
-        usart.write('\n');
         switch (byte)
         {
             // left
@@ -169,44 +149,89 @@ void HumanInterface::process(uint8_t byte)
                 mode_->move_cursor(1, 0);
                 return;
             }
-            case 30: // foreground black
+            case 0: // reset
             {
-                mode_->set_foreground_color(0);
+                mode_->set_color(colors::white, colors::black);
                 return;
             }
-            case 31: // foreground red
+            case 30: // fg black
             {
-                mode_->set_foreground_color(3);
+                mode_->set_foreground_color(colors::black);
                 return;
             }
-            case 32: // foreground green
+            case 31: // fg red
             {
-                mode_->set_foreground_color(12);
+                mode_->set_foreground_color(colors::red);
                 return;
             }
-            case 33: // foreground yellow
+            case 32: // fg green
             {
-                mode_->set_foreground_color(15);
+                mode_->set_foreground_color(colors::green);
                 return;
             }
-            case 34: // foreground blue
+            case 33: // fg yellow
             {
-                mode_->set_foreground_color(0x30);
+                mode_->set_foreground_color(colors::yellow);
                 return;
             }
-            case 35: // foreground magenta
+            case 34: // fg blue
             {
-                mode_->set_foreground_color(0x33);
+                mode_->set_foreground_color(colors::blue);
+                return;
+            }
+            case 35: // fg magenta
+            {
+                mode_->set_foreground_color(colors::magneta);
                 return;
             }
             case 36: // fg cyan
             {
-                mode_->set_foreground_color(0x3c);
+                mode_->set_foreground_color(colors::cyan);
                 return;
             }
             case 37: // fg white
             {
-                mode_->set_foreground_color(0x3f);
+                mode_->set_foreground_color(colors::white);
+                return;
+            }
+            case 40: // bg black
+            {
+                mode_->set_background_color(colors::black);
+                return;
+            }
+            case 41: // bg red
+            {
+                mode_->set_background_color(colors::red);
+                return;
+            }
+            case 42: // bg green
+            {
+                mode_->set_background_color(colors::green);
+                return;
+            }
+            case 43: // bg yellow
+            {
+                mode_->set_background_color(colors::yellow);
+                return;
+            }
+            case 44: // bg blue
+            {
+                mode_->set_background_color(colors::blue);
+                return;
+            }
+            case 45: // bg magenta
+            {
+                mode_->set_background_color(colors::magneta);
+                return;
+            }
+            case 46: // bg cyan
+            {
+                mode_->set_background_color(colors::cyan);
+                return;
+            }
+            case 47: // bg white
+            {
+                mode_->set_background_color(colors::white);
                 return;
             }
         }
