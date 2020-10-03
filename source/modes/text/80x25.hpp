@@ -53,7 +53,6 @@ public:
 
     void render_test_box();
     void render();
-    int get_pixel(msgui::Position position);
 
     void move_cursor(int row_offset, int column_offset);
 
@@ -67,6 +66,17 @@ private:
     void set_pixel(msgui::Position position, int color);
     void render_font(const auto& bitmap, const int row, const int column, const int foreground, const int background);
 
+    void clear_text_buffer();
+    void clear_changed_bitmap(); 
+
+    void add_pixel_to_render(int row, int column);
+    void set_attribute(int row, int column, int attribute);
+    uint16_t get_attribute(int row, int column) const;
+
+    void render_screen();
+    void render_cursor();
+
+    char get_character(int row, int column) const;
     char *text_buffer_;
     uint8_t* changed_bitmap_;
     uint16_t* attributes_;
@@ -78,7 +88,11 @@ private:
     uint8_t cursor_column_{0};
 
     vga::Vga vga_;
-    bool force_trigger_ {false};
+    bool draw_cursor_{false};
+    bool cursor_visible_{false};
+
+    constexpr static uint16_t time_to_blink_default = 30;
+    uint16_t time_to_blink_{time_to_blink_default};
 };
 
 } // namespace text
