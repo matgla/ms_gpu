@@ -19,12 +19,21 @@ add_library(msgpu_interfaces)
 target_sources(msgpu_interfaces
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/usart.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/spi.hpp
 
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/usart.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/spi.cpp
 )
 
-target_link_libraries(msgpu_interfaces PRIVATE hal)
+find_package(GSL REQUIRED)
+
+target_link_libraries(msgpu_interfaces
+    PRIVATE
+        hal
+    PUBLIC
+        GSL
+)
 
 target_compile_options(msgpu_interfaces PUBLIC
     $<$<COMPILE_LANGUAGE:CXX>:-std=c++2a>

@@ -30,6 +30,7 @@ void nanosleep(timespec* ts, timespec *tc)
 #include <msgui/Factory.hpp>
 
 #include <stm32f4xx_hal.h>
+#include <stm32f4xx_hal_tim_ex.h>
 
 
 #include <hal/time/time.hpp>
@@ -41,10 +42,14 @@ void nanosleep(timespec* ts, timespec *tc)
 #include "generator/vga.hpp"
 #include "generator/timings.hpp"
 #include "interfaces/usart.hpp"
+#include "interfaces/spi.hpp"
 #include "modes/modes.hpp"
 #include "memory/video_ram.hpp"
 
 #include "processor/command_processor.hpp"
+
+#include "fpga_connection.hpp"
+#include <hal/core/core.hpp>
 
 void initalize_video_pins()
 {
@@ -85,175 +90,78 @@ bool has_command(std::string_view str, std::string_view command)
     return false;
 }
 
+constexpr static uint32_t bootloader_address = 0x1FFF0000;
+constexpr static uint32_t ram_address_for_bootloader = 0x2001FFFF;
+
+void jump_to_bootloader()
+{
+    __HAL_SYSCFG_REMAPMEMORY_SYSTEMFLASH();
+    __set_MSP(ram_address_for_bootloader);
+    // void (*bootloader)(void) = reinterpret_cast<(void(*)(void))>(bootloader_address + 4);
+    // bootloader();
+}
+
 int main()
 {
     board::board_init();
+
+    hal::core::Core::initializeClocks();
+
     hal::interrupt::set_systick_handler([](std::chrono::milliseconds){
     });
 
-    hal::time::Time::init();
-    // hal::interrupt::s
-    hal::interrupt::disable_systick();
+
+    hal::interrupt::set_systick_period(std::chrono::milliseconds(100));
 
     Usart usart;
     usart.initialize();
 
-    vga::Vga vga;
-    vga::Mode mode(vga);
-    mode.switch_to(vga::Modes::Text_80x25);
-    vga.initialize_hsync(svga_800x600_60);
-    vga.initialize_vsync(svga_800x600_60);
+    // constexpr auto font = msgui::fonts::Font5x7::data;
 
-    initalize_video_pins();
+    // int pos_x = 2;
 
-    constexpr auto font = msgui::fonts::Font5x7::data;
+    // int escape_counter = 0;
+    // bool human_interface = false;
+    // processor::CommandProcessor processor(mode);
+    // processor.change();
 
-    int pos_x = 2;
+    // Spi::initialize();
 
-    int escape_counter = 0;
-    bool human_interface = false;
-    processor::CommandProcessor processor(mode);
-    processor.change();
+    usart.write("START\n");
+    interface::FpgaConnection fpga;
+    GPIO_InitTypeDef gpio;
+    gpio.Pin = GPIO_PIN_8;
+    gpio.Mode = GPIO_MODE_AF_PP;
+    gpio.Pull = GPIO_NOPULL;
+    gpio.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+    gpio.Alternate = GPIO_AF1_TIM1;
+
+
+    HAL_GPIO_Init(GPIOA, &gpio);
+
+
+    fpga.init();
+
+    uint8_t data[] = { 0xff};
+    uint8_t data2[] = { 0x00};
+
+    uint8_t msg[100];
+
+
 
     while (true)
     {
-        if (vga.render())
+        if (fpga.ready_for_transmission())
         {
-            mode.render();
-            vga.render(false);
-            // asm volatile inline ("wfi\n");
-        }
-        // for (int i = 0; i < 1000; ++i)
-        // {
-            // hal::time::sleep(std::chrono::microseconds(1000));
-        // }
-        auto data = usart.read();
-
-        for (char byte : data)
-        {
-            if (byte == 27)
-            {
-                ++escape_counter;
-                if (escape_counter == 3)
-                {
-                    processor.change();
-                    escape_counter = 0;
-                }
-                processor.process(byte);
-                continue;
-            }
-            escape_counter = 0;
-            processor.process(byte);
-        }
-
-        /* command.remove_prefix(std::min(command.find_first_not_of(" "), command.size()));
-        command.remove_suffix(command.size() - command.find_last_not_of(" ") - 1);
-        const auto help_position = command.find("help");
-        if (help_position != std::string_view::npos)
-        {
-            if (command.length() == 4)
-            {
-                usart.write("Available commands:\n");
-                usart.write("  mode [mode] - select display mode\n");
-                usart.write("To get more information please write help [command].\n");
-            }
-            else
-            {
-            }
-            continue;
-        }
-
-        if (has_command(command, "mode"))
-        {
-            const auto delimiter = command.find(' ');
-            const auto argument = get_argument(command);
-            if (!argument.empty())
-            {
-                const auto mode = command.substr(delimiter + 1, command.size());
-                usart.write("Switch to mode: ");
-                vga::Mode mode_number(static_cast<vga::Mode>(std::atoi(mode.data())));
-                usart.write(vga::to_string(mode_number));
-                usart.write("\n");
-                vga.setup_draw_function(mode_number);
-            }
-            continue;
-        }
-
-        if (has_command(command, "newline"))
-        {
-            const auto delimiter = command.find(' ');
-            const auto argument = get_argument(command);
-            if (!argument.empty())
-            {
-                const auto mode = command.substr(delimiter + 1, command.size());
-                usart.write("Switch to mode: ");
-                vga::Mode mode_number(static_cast<vga::Mode>(std::atoi(mode.data())));
-                usart.write(vga::to_string(mode_number));
-                usart.write("\n");
-                vga.setup_draw_function(mode_number);
-            }
-            continue;
-        }
-
-        if (has_command(command, "clear"))
-        {
-            const auto argument = get_argument(command);
-            int color = std::atoi(argument.data());
-            // vga.clear(color);
-            pos_x = 0;
-            for (int i = 0; i < 256; ++i)
-            {
-                // vga.set_pixel(0, i, 63);
-                // vga.set_pixel(239, i, 63);
-                // vga.set_pixel(i, 0, 63);
-                // vga.set_pixel(i, 255, 63);
-            }
-
-            continue;
-        }
-
-        if (has_command(command, ";"))
-        {
-            const auto y_delimiter = command.find(';');
-            const auto y_data = command.substr(0, y_delimiter);
-            auto rest =  command.substr(y_delimiter + 1, command.size());
-            usart.write(rest);
-            usart.write("\n");
-            char buffer[4];
-            std::memcpy(buffer, y_data.data(), y_data.size());
-            buffer[y_data.size()] = 0;
-            int y = std::atoi(buffer);
-
-            const auto x_delimiter = command.find(';');
-            const auto x_data = rest.substr(0, x_delimiter);
-            rest =  rest.substr(x_delimiter + 1, rest.size());
-            std::memcpy(buffer, x_data.data(), x_data.size());
-            buffer[x_data.size()] = 0;
-            usart.write(rest);
-            usart.write("\n");
-            int x = std::atoi(buffer);
-            int color = std::atoi(rest.data());
-            // vga.set_pixel(y, x, color);
-        }
-        else
-        {
-            for (const auto c : command)
-            {
-                const auto& ch = font.get(c);
-                for (int y = 0; y < ch.height(); ++y)
-                {
-                    for (int x = 0; x < ch.width(); ++x)
-                    {
-                        if (ch.getPixel(x, y))
-                        {
-                            // vga.set_pixel(y + 2, x + pos_x, 12);
-                        }
-                    }
-                }
-                pos_x += ch.width() + 1;
-            }
+            usart.write("TRANSMIT B\n");
+            fpga.transmit_data(data);
+            hal::time::sleep(std::chrono::milliseconds(500));
 
         }
-        // usart.write("This is not a blocker\n");*/
+        if (fpga.ready_for_transmission())
+        {
+            hal::time::sleep(std::chrono::milliseconds(500));
+            fpga.transmit_data(data2);
+        }
     }
 }

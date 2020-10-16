@@ -26,8 +26,11 @@ add_subdirectory(processor)
 
 target_sources(msgpu
     PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/fpga_connection.hpp
+
         ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/syscalls.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/fpga_connection.cpp
 )
 
 target_link_libraries(msgpu PRIVATE

@@ -16,6 +16,8 @@
 
 #include "interfaces/usart.hpp"
 
+#include "stm32f401ceu6_usart.hpp"
+
 #include <stm32f4xx.h>
 #include <stm32f4xx_hal_rcc.h>
 #include <stm32f4xx_hal_gpio.h>
@@ -36,61 +38,33 @@ namespace
 
 void Usart::initialize()
 {
-    __HAL_RCC_GPIOB_CLK_ENABLE();
-    __HAL_RCC_USART1_CLK_ENABLE();
-
-    GPIO_InitTypeDef  gpio;
-
-    gpio.Pin       = GPIO_PIN_6;
-    gpio.Mode      = GPIO_MODE_AF_PP;
-    gpio.Pull      = GPIO_NOPULL;
-    gpio.Speed     = GPIO_SPEED_FAST;
-    gpio.Alternate = GPIO_AF7_USART1;
-
-    HAL_GPIO_Init(GPIOB, &gpio);
-
-    /* UART RX GPIO pin configuration  */
-    gpio.Pin = GPIO_PIN_7;
-    gpio.Alternate = GPIO_AF7_USART1;
-
-    HAL_GPIO_Init(GPIOB, &gpio);
-
-    usart.Instance = USART1;
-    usart.Init.BaudRate = 115200;
-    usart.Init.WordLength   = UART_WORDLENGTH_8B;
-    usart.Init.StopBits     = UART_STOPBITS_1;
-    usart.Init.Parity       = UART_PARITY_NONE;
-    usart.Init.HwFlowCtl    = UART_HWCONTROL_NONE;
-    usart.Init.Mode         = UART_MODE_TX_RX;
-    usart.Init.OverSampling = UART_OVERSAMPLING_8;
-
-    HAL_UART_Init(&usart);
+    hal::interfaces::USART_1().init(9600);
 }
 
 uint8_t buffer[50];
 
 void Usart::write(const std::string_view& msg)
 {
-    HAL_UART_Transmit(&usart, reinterpret_cast<uint8_t*>(const_cast<char*>(msg.data())), msg.length(), 100);
+    hal::interfaces::USART_1().write(msg);
 }
 
 void Usart::write(char c)
 {
-    HAL_UART_Transmit(&usart, reinterpret_cast<uint8_t*>(&c), 1, 100);
+    hal::interfaces::USART_1().write(std::string_view(&c, 1));
 }
 
 void Usart::write(int n)
 {
     char buf[100];
     eul::utils::itoa(n, buf, 10);
-    Usart::write(buf);
+    hal::interfaces::USART_1().write(std::string_view(buf));
 }
 
 void Usart::write_hex(int n)
 {
     char buf[100];
-    eul::utils::itoa(n, buf, 10);
-    Usart::write(buf);
+    eul::utils::itoa(n, buf, 16);
+    hal::interfaces::USART_1().write(std::string_view(buf));
 }
 
 

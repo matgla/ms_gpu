@@ -17,6 +17,20 @@
             "target": "msgui",
             "options": {
             }
+        },
+        {
+            "name": "gsl",
+            "link": "https://github.com/microsoft/GSL.git",
+            "type": "git",
+            "version": "v3.0.0",
+            "directory": "gsl",
+            "target": "GSL",
+            "options": {
+                "cmake_variables": {
+                    "GSL_TERMINATE_ON_CONTRACT_VIOLATION": "ON",
+                    "GSL_MSVC_USE_STL_NOEXCEPTION_WORKAROUND": "ON"
+                }
+            }
         }
     ]
 }
