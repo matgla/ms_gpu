@@ -84,7 +84,7 @@ void FpgaConnection::init()
     initialize_timer();
     initialize_dma();
 
-    clock.init(hal::gpio::Alternate::PushPull, hal::gpio::Speed::High, hal::gpio::PullUpPullDown::Up);
+    clock.init(hal::gpio::Alternate::PushPull, hal::gpio::Speed::High, hal::gpio::PullUpPullDown::Down);
     static_cast<hal::gpio::DigitalInputOutputPin::Impl*>(&clock)
         ->set_alternate_function(GPIO_AF1_TIM1);
 
