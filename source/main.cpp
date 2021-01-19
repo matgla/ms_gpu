@@ -72,6 +72,7 @@ void initalize_video_pins()
 
 std::string_view get_argument(std::string_view command)
 {
+    
     const auto delimiter = command.find(' ');
     if (delimiter != std::string_view::npos)
     {
@@ -111,7 +112,7 @@ int main()
     });
 
 
-    hal::interrupt::set_systick_period(std::chrono::milliseconds(100));
+    hal::interrupt::set_systick_period(std::chrono::milliseconds(1));
 
 //    Usart usart;
 //usart.initialize();
@@ -148,20 +149,19 @@ int main()
     uint8_t msg[100];
 
     GPIOB->ODR = 0;
-
     while (true)
     {
         if (fpga.ready_for_transmission())
         {
   //          usart.write("TRANSMIT B\n");
             fpga.transmit_data(data);
-            hal::time::sleep(std::chrono::milliseconds(30));
+            hal::time::sleep(std::chrono::milliseconds(100));
 
         }
         if (fpga.ready_for_transmission())
         {
             fpga.transmit_data(data2);
-            hal::time::sleep(std::chrono::milliseconds(30));
+            hal::time::sleep(std::chrono::milliseconds(100));
 
         }
     }

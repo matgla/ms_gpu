@@ -57,5 +57,7 @@ if (${vendor} STREQUAL "STM32")
     )
 endif ()
 
+#message (FATAL_ERROR "${CMAKE_MODULE_PATH}")
+
 include (GenerateBinary)
 generate_binary(msgpu ${vendor})

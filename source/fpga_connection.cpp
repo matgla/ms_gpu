@@ -162,52 +162,42 @@ void FpgaConnection::initialize_timer()
     // TODO: remove hardcode and allow to create different frequencies
     RCC->APB2ENR |= RCC_APB2ENR_TIM1EN;
     uint16_t prescaler = (uint16_t) (SystemCoreClock / 1000000) - 1;
+
     TIM1->CR1 &= ~(TIM_CR1_DIR | TIM_CR1_CMS);
     TIM1->CR1 |= TIM_COUNTERMODE_UP;
     TIM1->CR1 &= ~TIM_CR1_CKD;
     TIM1->CR1 |= TIM_CLOCKDIVISION_DIV1;
-    TIM1->ARR = 100; 
-    TIM1->CCR1 = 50; 
-    TIM1->PSC = prescaler; 
-    TIM1->RCR = 2 - 1; // function to setup 
+    TIM1->ARR = 3 - 1; 
+    TIM1->CCR1 = 2; 
+    TIM1->PSC = 1; 
+    TIM1->RCR = 10 - 1; // function to setup 
     TIM1->EGR = TIM_EGR_UG;
     TIM1->SMCR = RESET;
     TIM1->CR1 |= TIM_CR1_OPM;
-    TIM1->CCMR1 &= (uint16_t)~TIM_CCMR1_OC1M;
-    TIM1->CCMR1 &= (uint16_t)~TIM_CCMR1_CC1S;
-    TIM1->CCMR1 |= TIM_OCMODE_PWM2;
-    TIM1->CCER &= (uint16_t)~TIM_CCER_CC1P;
-    TIM1->CCER |= TIM_OCPOLARITY_HIGH;
-    TIM1->CCER |= TIM_CCER_CC1E;
-    TIM1->BDTR |= TIM_BDTR_MOE;
-    //    __HAL_RCC_TIM1_CLK_ENABLE();
-//    tim.Instance = TIM1;
-//    tim.Init.Prescaler = 1;
-//    tim.Init.CounterMode = TIM_COUNTERMODE_UP;
-//    tim.Init.Period = 20 - 1;
-//    tim.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-//    tim.Init.RepetitionCounter = 0;
-//    tim.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-//    HAL_TIM_OnePulse_Init(&tim, TIM_OPMODE_SINGLE);
-
-//    TIM_OnePulse_InitTypeDef oc;
-//    oc.OCMode = TIM_OCMODE_PWM2;
-//    oc.Pulse = 10;
-//    oc.ICPolarity = TIM_ICPOLARITY_RISING;
-//    oc.ICSelection = TIM_ICSELECTION_DIRECTTI;
-//    oc.ICFilter = 0;
-//    oc.OCPolarity = TIM_OCPOLARITY_HIGH;
-//    oc.OCNPolarity = TIM_OCNPOLARITY_HIGH;
-//    //oc.OCFastMode = TIM_OCFAST_DISABLE;
-//    oc.OCIdleState = TIM_OCIDLESTATE_RESET;
-//    oc.OCNIdleState = TIM_OCNIDLESTATE_RESET;
-//    HAL_TIM_OnePulse_ConfigChannel(&tim, &oc, TIM_CHANNEL_1, TIM_CHANNEL_2);
-
-    TIM_ClockConfigTypeDef sClockSourceConfig = {0};
-    sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-    HAL_TIM_ConfigClockSource(&tim, &sClockSourceConfig);
-   // __HAL_TIM_ENABLE(&tim);
-  //  HAL_TIM_PWM_Start(&tim, TIM_CHANNEL_1);
+    //TIM1->BDTR = RESET;
+    //TIM1->BDTR |= TIM_LOCKLEVEL_OFF;
+   // //TIM1->BDTR |= TIM_OSSI_ENABLE;
+   // //TIM1->BDTR |= TIM_OSSR_ENABLE;
+   // //TIM1->BDTR |= TIM_BREAK_ENABLE;
+   // //TIM1->BDTR |= TIM_BREAKPOLARITY_HIGH;
+   // //TIM1->BDTR |= TIM_AUTOMATICOUTPUT_ENABLE;
+   //TIM1->CR1 |= TIM_CR1_OPM;
+   TIM1->CCMR1 &= ~TIM_CCMR1_OC1M;
+   TIM1->CCMR1 &= ~TIM_CCMR1_CC1S;
+   TIM1->CCMR1 |= TIM_OCMODE_PWM1;
+   TIM1->CCER &= ~TIM_CCER_CC1P;
+   TIM1->CCER |= TIM_OCPOLARITY_HIGH;
+   TIM1->CCER = TIM_CCER_CC1E;
+   TIM1->BDTR |= TIM_BDTR_MOE;
+   //TIM1->CR1 |= TIM_CR1_CEN;
+    // __HAL_RCC_TIM1_CLK_ENABLE();
+    tim.Instance = TIM1;
+    tim.Init.Prescaler = 1;
+    tim.Init.CounterMode = TIM_COUNTERMODE_UP;
+    tim.Init.Period = 100 - 1;
+    tim.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+    tim.Init.RepetitionCounter = 0;
+    tim.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
 
 }
 
@@ -263,8 +253,9 @@ void FpgaConnection::start_dma_transmission(const gsl::span<uint8_t>& data)
     __HAL_TIM_ENABLE_DMA(&tim, TIM_DMA_CC1);
   //  __HAL_TIM_ENABLE(&tim);
    // TIM1->CNT = 0; 
-    TIM1->RCR = 10 - 1; // function to setup 
-    TIM1->EGR |= 0x01;
+    
+    TIM1->RCR = data.size() - 1; // function to setup 
+    TIM1->EGR |= TIM_EGR_UG;
 
     TIM1->CR1 |= TIM_CR1_CEN;
     //HAL_TIM_OnePulse_Start(&tim, TIM_CHANNEL_1);
