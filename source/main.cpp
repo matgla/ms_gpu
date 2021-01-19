@@ -113,8 +113,8 @@ int main()
 
     hal::interrupt::set_systick_period(std::chrono::milliseconds(100));
 
-    Usart usart;
-    usart.initialize();
+//    Usart usart;
+//usart.initialize();
 
     // constexpr auto font = msgui::fonts::Font5x7::data;
 
@@ -127,7 +127,7 @@ int main()
 
     // Spi::initialize();
 
-    usart.write("START\n");
+ //   usart.write("START\n");
     interface::FpgaConnection fpga;
     GPIO_InitTypeDef gpio;
     gpio.Pin = GPIO_PIN_8;
@@ -142,26 +142,27 @@ int main()
 
     fpga.init();
 
-    uint8_t data[] = { 0xff};
-    uint8_t data2[] = { 0x00};
+    uint8_t data[] = { 0x0f, 0xf0, 0xab, 0x12 }; //, 0x02, 0xff, 0x00 };
+    uint8_t data2[] = { 0x00 }; //, 0xff, 0x00, 0xff };
 
     uint8_t msg[100];
 
-
+    GPIOB->ODR = 0;
 
     while (true)
     {
         if (fpga.ready_for_transmission())
         {
-            usart.write("TRANSMIT B\n");
+  //          usart.write("TRANSMIT B\n");
             fpga.transmit_data(data);
-            hal::time::sleep(std::chrono::milliseconds(500));
+            hal::time::sleep(std::chrono::milliseconds(30));
 
         }
         if (fpga.ready_for_transmission())
         {
-            hal::time::sleep(std::chrono::milliseconds(500));
             fpga.transmit_data(data2);
+            hal::time::sleep(std::chrono::milliseconds(30));
+
         }
     }
 }
