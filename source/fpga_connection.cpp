@@ -167,7 +167,7 @@ void FpgaConnection::initialize_timer()
     TIM1->CR1 |= TIM_COUNTERMODE_UP;
     TIM1->CR1 &= ~TIM_CR1_CKD;
     TIM1->CR1 |= TIM_CLOCKDIVISION_DIV1;
-    TIM1->ARR = 3 - 1; 
+    TIM1->ARR = 5 - 1; 
     TIM1->CCR1 = 2; 
     TIM1->PSC = 1; 
     TIM1->RCR = 10 - 1; // function to setup 
